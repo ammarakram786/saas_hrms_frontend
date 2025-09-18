@@ -1,0 +1,33 @@
+{
+  "name": "hrms-frontend",
+  "private": true,
+  "build": {
+    "analyze": true
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "nuxt": "^3.8.0",
+    "vue": "^3.3.8",
+    "vue-router": "^4.2.5"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.5.1",
+    "@vueuse/nuxt": "^10.5.0",
+    "primevue": "^3.45.0",
+    "primeicons": "^6.0.1",
+    "@primevue/themes": "^4.0.0",
+    "tailwindcss": "^3.3.5",
+    "@nuxtjs/tailwindcss": "^6.8.4",
+    "axios": "^1.6.0",
+    "pinia": "^2.1.7",
+    "@vueuse/core": "^10.5.0",
+    "jwt-decode": "^3.1.2"
+  }
+}
