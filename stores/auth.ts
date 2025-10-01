@@ -55,39 +55,50 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(credentials: LoginCredentials) {
       this.isLoading = true
-      
+
       try {
         const { $api } = useNuxtApp()
-        
+        const toast = useToast()
+
         const response = await $api('/api/v1/auth/login/', {
           method: 'POST',
           body: credentials
         })
-        
+
         this.tokens = {
           access_token: response.access_token,
           refresh_token: response.refresh_token,
           token_type: response.token_type,
           expires_in: response.expires_in
         }
-        
+
         this.user = response.user
-        
+
         // Decode token to get additional info
         if (this.tokens.access_token) {
           const decoded: any = jwtDecode(this.tokens.access_token)
           this.permissions = decoded.permissions || []
         }
-        
+
         // Store in localStorage
         this.persistAuth()
-        
+
         // Get user permissions and tenant info
         await this.fetchUserPermissions()
-        
+
+        // Show success message
+        toast.add({
+          severity: 'success',
+          summary: 'Login Successful',
+          detail: `Welcome back, ${this.userFullName}!`,
+          life: 3000
+        })
+
         return response
       } catch (error: any) {
-        throw new Error(error.message || 'Login failed')
+        // Error is already handled by the API client error handler
+        // Just re-throw to maintain error chain
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -95,15 +106,16 @@ export const useAuthStore = defineStore('auth', {
 
     async register(userData: any) {
       this.isLoading = true
-      
+
       try {
         const { $api } = useNuxtApp()
-        
+        const toast = useToast()
+
         const response = await $api('/api/v1/auth/register/', {
           method: 'POST',
           body: userData
         })
-        
+
         // Auto-login after registration
         this.tokens = {
           access_token: response.access_token,
@@ -111,13 +123,25 @@ export const useAuthStore = defineStore('auth', {
           token_type: response.token_type,
           expires_in: response.expires_in
         }
-        
+
         this.user = response.user
         this.persistAuth()
-        
+
+        // Get user permissions
+        await this.fetchUserPermissions()
+
+        // Show success message
+        toast.add({
+          severity: 'success',
+          summary: 'Registration Successful',
+          detail: `Welcome to HRMS, ${this.userFullName}!`,
+          life: 4000
+        })
+
         return response
       } catch (error: any) {
-        throw new Error(error.message || 'Registration failed')
+        // Error is already handled by the API client error handler
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -125,31 +149,34 @@ export const useAuthStore = defineStore('auth', {
 
     async refreshToken() {
       if (!this.tokens?.refresh_token) {
-        throw new Error('No refresh token available')
+        const errorHandler = useErrorHandler()
+        errorHandler.handleUnauthorized()
+        return
       }
 
       try {
         const { $api } = useNuxtApp()
-        
+
         const response = await $api('/api/v1/auth/refresh/', {
           method: 'POST',
           body: {
             refresh_token: this.tokens.refresh_token
           }
         })
-        
+
         this.tokens = {
           ...this.tokens,
           access_token: response.access_token,
           expires_in: response.expires_in
         }
-        
+
         this.persistAuth()
-        
+
         return response
       } catch (error) {
         // If refresh fails, logout user
-        this.logout()
+        const errorHandler = useErrorHandler()
+        errorHandler.handleUnauthorized()
         throw error
       }
     },

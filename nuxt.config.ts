@@ -1,31 +1,78 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+
+  // Performance optimizations
+  experimental: {
+    payloadExtraction: false, // Only extract critical CSS
+    viewTransition: true, // Enable view transitions
+  },
+
+  // Build optimizations
+  build: {
+    transpile: ['primevue'],
+    splitChunks: {
+      layouts: true,
+      pages: true,
+      commons: true
+    }
+  },
+
+  // CSS optimizations
+  css: [
+    'primevue/resources/themes/sakai/theme.css',
+    'primevue/resources/primevue.min.css',
+    'primeicons/primeicons.css',
+    '~/assets/css/main.css'
+  ],
+
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     '@vueuse/nuxt'
   ],
-  css: [
-    'primevue/resources/themes/aura-light-green/theme.css',
-    'primevue/resources/primevue.min.css',
-    'primeicons/primeicons.css',
-    '~/assets/css/main.css'
-  ],
+
+  // Runtime configuration
   runtimeConfig: {
     public: {
-      apiUrl: process.env.API_URL,
+      apiUrl: process.env.API_URL || 'http://localhost:8000/api/v1',
       appName: 'HRMS SaaS',
       appVersion: '1.0.0'
     }
   },
-  ssr: false, // SPA mode for better API integration
+
+  // SPA mode for better API integration
+  ssr: false,
+
+  // Development proxy
   nitro: {
     devProxy: {
       '/api/v1': {
-        target: process.env.API_URL,
+        target: process.env.API_URL || 'http://localhost:8000',
         changeOrigin: true
       }
+    }
+  },
+
+  // Performance optimizations
+  vite: {
+    build: {
+      // Bundle analysis
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separate vendor chunks for better caching
+            'primevue': ['primevue'],
+            'primeicons': ['primeicons'],
+            'axios': ['axios'],
+            'jwt-decode': ['jwt-decode'],
+            'chartjs': ['chart.js']
+          }
+        }
+      },
+      // Performance hints
+      reportCompressedSize: true,
+      chunkSizeWarningLimit: 1000
     }
   }
 })
