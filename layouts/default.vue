@@ -91,19 +91,22 @@ onMounted(() => {
 <style scoped>
 .layout-wrapper {
   min-height: 100vh;
+  background-color: var(--surface-ground);
 }
 
 .layout-sidebar {
   position: fixed;
-  width: 300px;
+  width: 280px;
   height: 100vh;
   z-index: 999;
   overflow-y: auto;
   user-select: none;
   top: 0;
+  left: 0;
   transition: transform 0.2s, left 0.2s;
-  background-color: var(--surface-card);
+  background: linear-gradient(180deg, var(--surface-card) 0%, var(--surface-50) 100%);
   border-right: 1px solid var(--surface-border);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .layout-main-container {
@@ -111,13 +114,16 @@ onMounted(() => {
   flex-direction: column;
   min-height: 100vh;
   justify-content: space-between;
-  padding-left: 300px;
+  margin-left: 280px;
   transition: margin-left 0.2s;
+  background-color: var(--surface-ground);
 }
 
 .layout-main {
   flex: 1 1 auto;
   padding: 2rem;
+  background-color: var(--surface-ground);
+  min-height: calc(100vh - 70px);
 }
 
 .layout-mask {
@@ -127,14 +133,14 @@ onMounted(() => {
   z-index: 998;
   width: 100%;
   height: 100%;
-  background-color: var(--maskbg);
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
 }
 
 /* Mobile */
 @media screen and (max-width: 991px) {
   .layout-main-container {
     margin-left: 0;
-    padding-left: 0;
   }
 
   .layout-sidebar {

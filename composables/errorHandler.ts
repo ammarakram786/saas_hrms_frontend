@@ -1,140 +1,255 @@
-interface ApiError {
-  error: {
-    message: string
-    code?: string
-    status_code?: number
-    field_errors?: Record<string, string>
-  }
+import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '~/stores/auth'
+
+export interface ApiError {
+  message: string
+  status?: number
+  details?: any
+  errors?: Record<string, string[]>
 }
 
-export const useErrorHandler = () => {
+export function useErrorHandler() {
   const toast = useToast()
+  const authStore = useAuthStore()
 
-  const handleValidationError = (error: ApiError) => {
-    const message = error.error.message || 'Validation failed'
-    const fieldErrors = error.error.field_errors || {}
+  const handleError = (error: any): ApiError => {
+    console.error('API Error:', error)
 
-    // Show general validation error
-    toast.add({
-      severity: 'error',
-      summary: 'Validation Error',
-      detail: message,
-      life: 5000
-    })
+    // Extract error information
+    const apiError: ApiError = {
+      message: 'An unexpected error occurred',
+      status: error.response?.status || 500,
+      details: error.response?.data
+    }
 
-    // Show field-specific errors if available
-    Object.entries(fieldErrors).forEach(([field, fieldMessage]) => {
-      toast.add({
-        severity: 'warn',
-        summary: `${field.charAt(0).toUpperCase() + field.slice(1)} Error`,
-        detail: fieldMessage,
-        life: 4000
-      })
-    })
+    // Handle different error types
+    if (error.response?.data?.message) {
+      apiError.message = error.response.data.message
+    } else if (error.response?.data?.detail) {
+      apiError.message = error.response.data.detail
+    } else if (error.response?.data?.error) {
+      apiError.message = error.response.data.error
+    } else if (error.message) {
+      apiError.message = error.message
+    }
 
-    return { message, fieldErrors }
+    // Extract validation errors
+    if (error.response?.data?.errors) {
+      apiError.errors = error.response.data.errors
+    }
+
+    // Handle specific status codes
+    switch (apiError.status) {
+      case 400:
+        handleBadRequest(apiError)
+        break
+      case 401:
+        handleUnauthorized()
+        break
+      case 403:
+        handleForbidden(apiError)
+        break
+      case 404:
+        handleNotFound(apiError)
+        break
+      case 422:
+        handleValidationError(apiError)
+        break
+      case 429:
+        handleRateLimit(apiError)
+        break
+      case 500:
+        handleServerError(apiError)
+        break
+      case 502:
+      case 503:
+      case 504:
+        handleServiceUnavailable(apiError)
+        break
+      default:
+        handleGenericError(apiError)
+    }
+
+    return apiError
   }
 
-  const handleUnauthorized = () => {
-    const authStore = useAuthStore()
-
-    toast.add({
-      severity: 'error',
-      summary: 'Authentication Required',
-      detail: 'Please log in to continue',
-      life: 5000
-    })
-
-    // Logout user and redirect to login
-    authStore.logout()
-  }
-
-  const handleForbidden = (error: ApiError) => {
-    const message = error.error.message || 'Access denied'
-
-    toast.add({
-      severity: 'error',
-      summary: 'Access Denied',
-      detail: message,
-      life: 5000
-    })
-  }
-
-  const handleNotFound = (error: ApiError) => {
-    const message = error.error.message || 'Resource not found'
-
+  const handleBadRequest = (error: ApiError) => {
     toast.add({
       severity: 'warn',
-      summary: 'Not Found',
-      detail: message,
+      summary: 'Bad Request',
+      detail: error.message,
       life: 4000
     })
   }
 
-  const handleLocked = (error: ApiError) => {
-    const message = error.error.message || 'Account temporarily locked'
-
+  const handleUnauthorized = () => {
     toast.add({
       severity: 'warn',
-      summary: 'Account Locked',
-      detail: message,
-      life: 6000
+      summary: 'Session Expired',
+      detail: 'Please log in again to continue',
+      life: 4000
+    })
+    
+    // Redirect to login after a short delay
+    setTimeout(() => {
+      authStore.logout()
+    }, 2000)
+  }
+
+  const handleForbidden = (error: ApiError) => {
+    toast.add({
+      severity: 'warn',
+      summary: 'Access Denied',
+      detail: 'You do not have permission to perform this action',
+      life: 4000
+    })
+  }
+
+  const handleNotFound = (error: ApiError) => {
+    toast.add({
+      severity: 'warn',
+      summary: 'Not Found',
+      detail: 'The requested resource was not found',
+      life: 3000
+    })
+  }
+
+  const handleValidationError = (error: ApiError) => {
+    // Validation errors are typically handled by form components
+    // This is just a fallback
+    toast.add({
+      severity: 'warn',
+      summary: 'Validation Error',
+      detail: error.message,
+      life: 4000
     })
   }
 
   const handleRateLimit = (error: ApiError) => {
-    const message = error.error.message || 'Too many requests'
-
     toast.add({
       severity: 'warn',
-      summary: 'Rate Limited',
-      detail: message,
+      summary: 'Rate Limit Exceeded',
+      detail: 'Please wait a moment before trying again',
       life: 5000
     })
   }
 
   const handleServerError = (error: ApiError) => {
-    const message = error.error.message || 'Server error occurred'
-
     toast.add({
       severity: 'error',
       summary: 'Server Error',
-      detail: message,
+      detail: 'Something went wrong on our end. Please try again later.',
+      life: 5000
+    })
+  }
+
+  const handleServiceUnavailable = (error: ApiError) => {
+    toast.add({
+      severity: 'error',
+      summary: 'Service Unavailable',
+      detail: 'The service is temporarily unavailable. Please try again later.',
       life: 5000
     })
   }
 
   const handleGenericError = (error: ApiError) => {
-    const message = error.error.message || 'An unexpected error occurred'
-
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: message,
-      life: 5000
+      detail: error.message,
+      life: 4000
     })
   }
 
-  const handleNetworkError = (error: Error) => {
+  const handleNetworkError = () => {
     toast.add({
       severity: 'error',
       summary: 'Network Error',
       detail: 'Please check your internet connection and try again',
       life: 5000
     })
+  }
 
-    console.error('Network error:', error)
+  const handleTimeoutError = () => {
+    toast.add({
+      severity: 'warn',
+      summary: 'Request Timeout',
+      detail: 'The request took too long to complete. Please try again.',
+      life: 4000
+    })
+  }
+
+  // Utility functions
+  const isNetworkError = (error: any): boolean => {
+    return !error.response && error.request
+  }
+
+  const isTimeoutError = (error: any): boolean => {
+    return error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+  }
+
+  const isValidationError = (error: any): boolean => {
+    return error.response?.status === 422
+  }
+
+  const isAuthError = (error: any): boolean => {
+    return error.response?.status === 401 || error.response?.status === 403
+  }
+
+  const isServerError = (error: any): boolean => {
+    return error.response?.status >= 500
+  }
+
+  const isClientError = (error: any): boolean => {
+    return error.response?.status >= 400 && error.response?.status < 500
+  }
+
+  // Main error handler that determines the type and calls appropriate handler
+  const handleApiError = (error: any): ApiError => {
+    if (isNetworkError(error)) {
+      handleNetworkError()
+      return {
+        message: 'Network error occurred',
+        status: 0
+      }
+    }
+
+    if (isTimeoutError(error)) {
+      handleTimeoutError()
+      return {
+        message: 'Request timeout',
+        status: 408
+      }
+    }
+
+    return handleError(error)
   }
 
   return {
-    handleValidationError,
-    handleUnauthorized,
-    handleForbidden,
-    handleNotFound,
-    handleLocked,
-    handleRateLimit,
-    handleServerError,
-    handleGenericError,
-    handleNetworkError
+    handleError,
+    handleApiError,
+    handleNetworkError,
+    handleTimeoutError,
+    isNetworkError,
+    isTimeoutError,
+    isValidationError,
+    isAuthError,
+    isServerError,
+    isClientError
+  }
+}
+
+// Global error handler for unhandled promise rejections
+export function setupGlobalErrorHandler() {
+  if (process.client) {
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason)
+      
+      // Only handle API-related errors
+      if (event.reason?.response || event.reason?.request) {
+        const errorHandler = useErrorHandler()
+        errorHandler.handleApiError(event.reason)
+      }
+    })
   }
 }

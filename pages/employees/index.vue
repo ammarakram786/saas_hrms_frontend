@@ -1,672 +1,417 @@
 <template>
-  <div class="grid">
+  <div class="employees-page">
     <!-- Page Header -->
-    <div class="col-12">
-      <div class="card">
-        <div class="flex justify-content-between align-items-center">
-          <div>
-            <h1 class="text-3xl font-bold text-900 m-0">Employees</h1>
-            <p class="text-600 mt-2 mb-0">Manage your organization's employees</p>
-          </div>
-          <div class="flex align-items-center gap-3">
-            <PButton 
-              label="Export" 
-              icon="pi pi-download" 
-              class="p-button-outlined"
-              @click="exportEmployees"
-            />
-            <PButton 
-              v-can="'employee.create'"
-              label="Add Employee" 
-              icon="pi pi-plus" 
-              @click="showCreateDialog = true"
-            />
-          </div>
+    <div class="page-header mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Employees</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Manage your organization's employees</p>
+        </div>
+        <div class="flex gap-3">
+          <Button 
+            icon="pi pi-upload" 
+            label="Import" 
+            severity="secondary"
+            @click="showImportDialog = true"
+          />
+          <Button 
+            icon="pi pi-plus" 
+            label="Add Employee" 
+            @click="navigateTo('/employees/create')"
+          />
         </div>
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="col-12">
-      <PCard>
-        <template #title>Filters</template>
-        <template #content>
-          <div class="grid">
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="search" class="font-medium">Search</label>
-                <PInputText 
-                  id="search"
-                  v-model="filters.global" 
-                  placeholder="Search employees..."
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="department" class="font-medium">Department</label>
-                <PDropdown 
-                  id="department"
-                  v-model="filters.department" 
-                  :options="departmentOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Departments"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="status" class="font-medium">Status</label>
-                <PDropdown 
-                  id="status"
-                  v-model="filters.status" 
-                  :options="statusOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Statuses"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="employmentType" class="font-medium">Employment Type</label>
-                <PDropdown 
-                  id="employmentType"
-                  v-model="filters.employmentType" 
-                  :options="employmentTypeOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Types"
-                  class="w-full"
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Employee Table -->
-    <div class="col-12">
-      <PCard>
-        <template #title>
-          <div class="flex justify-content-between align-items-center">
-            <span>Employee List</span>
-            <div class="flex align-items-center gap-2">
-              <PButton
-                icon="pi pi-refresh"
-                class="p-button-outlined p-button-sm"
-                @click="refreshData"
-                :loading="loading"
-              />
-              <PDropdown
-                v-model="selectedView"
-                :options="viewOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-8rem"
+    <!-- Filters and Search -->
+    <PCard class="mb-6">
+      <template #content>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="md:col-span-2">
+            <div class="p-input-icon-left">
+              <i class="pi pi-search" />
+              <PInputText 
+                v-model="filters.search" 
+                placeholder="Search employees..."
+                class="w-full"
+                @input="onSearch"
               />
             </div>
           </div>
-        </template>
-        <template #content>
-          <div v-if="loading" class="p-4">
-            <SkeletonTable :columns="7" :rows="10" />
-          </div>
+          <PDropdown 
+            v-model="filters.department" 
+            :options="departmentOptions" 
+            option-label="name"
+            option-value="id"
+            placeholder="All Departments"
+            @change="loadEmployees"
+          />
+          <PDropdown 
+            v-model="filters.status" 
+            :options="statusOptions" 
+            option-label="label"
+            option-value="value"
+            placeholder="All Status"
+            @change="loadEmployees"
+          />
+        </div>
+      </template>
+    </PCard>
 
-          <PDataTable
-            v-else-if="selectedView === 'table'"
-            :value="employees"
-            :paginator="true"
-            :rows="20"
-            :filters="filters"
-            filterDisplay="row"
-            :loading="false"
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            :rowsPerPageOptions="[10, 20, 50, 100]"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            :globalFilterFields="['employee_id', 'full_name', 'email', 'department', 'position']"
-            responsiveLayout="scroll"
-            :scrollable="true"
-            scrollHeight="600px"
-          >
-            <template #empty>
-              <div class="text-center py-4">
-                <i class="pi pi-users text-4xl text-400 mb-3"></i>
-                <p class="text-600">No employees found</p>
+    <!-- Employees Table -->
+    <PCard>
+      <template #title>
+        <div class="flex justify-between items-center">
+          <span>Employees ({{ totalRecords }})</span>
+          <div class="flex gap-2">
+            <Button 
+              icon="pi pi-refresh" 
+              @click="loadEmployees"
+              :loading="isLoading"
+              text
+              size="small"
+            />
+            <Button 
+              icon="pi pi-download" 
+              @click="exportEmployees"
+              text
+              size="small"
+            />
+          </div>
+        </div>
+      </template>
+      <template #content>
+        <PDataTable 
+          :value="employees" 
+          :loading="isLoading"
+          :paginator="true"
+          :rows="pagination.rows"
+          :total-records="totalRecords"
+          :lazy="true"
+          @page="onPageChange"
+          @sort="onSort"
+          :sort-field="pagination.sortField"
+          :sort-order="pagination.sortOrder"
+          :rows-per-page-options="[10, 25, 50]"
+          paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+          current-page-report-template="Showing {first} to {last} of {totalRecords} employees"
+        >
+          <template #empty>
+            <div class="text-center py-8">
+              <i class="pi pi-users text-4xl text-gray-400 mb-2"></i>
+              <p class="text-gray-500 dark:text-gray-400">No employees found</p>
+            </div>
+          </template>
+
+          <PColumn field="employee_id" header="Employee ID" :sortable="true">
+            <template #body="{ data }">
+              <span class="font-mono text-sm">{{ data.employee_id }}</span>
+            </template>
+          </PColumn>
+
+          <PColumn field="full_name" header="Name" :sortable="true">
+            <template #body="{ data }">
+              <div class="flex items-center space-x-3">
+                <PAvatar 
+                  :label="data.first_name?.charAt(0) + data.last_name?.charAt(0)" 
+                  size="small"
+                  :class="getStatusColor(data.status)"
+                />
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ data.full_name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ data.email }}
+                  </div>
+                </div>
               </div>
             </template>
-            
-            <PColumn field="employee_id" header="ID" sortable style="min-width: 100px">
-              <template #body="{ data }">
-                <span class="font-medium">{{ data.employee_id }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="full_name" header="Name" sortable style="min-width: 200px">
-              <template #body="{ data }">
-                <div class="flex align-items-center gap-2">
-                  <PAvatar 
-                    :label="data.full_name.split(' ').map(n => n[0]).join('')" 
-                    shape="circle" 
-                    size="normal"
-                    class="bg-primary-100 text-primary-700"
-                  />
-                  <div>
-                    <div class="font-medium">{{ data.full_name }}</div>
-                    <div class="text-sm text-500">{{ data.position }}</div>
-                  </div>
-                </div>
-              </template>
-            </PColumn>
-            
-            <PColumn field="email" header="Email" sortable style="min-width: 200px">
-              <template #body="{ data }">
-                <div class="flex align-items-center gap-2">
-                  <i class="pi pi-envelope text-500"></i>
-                  <span>{{ data.email }}</span>
-                </div>
-              </template>
-            </PColumn>
-            
-            <PColumn field="department" header="Department" sortable style="min-width: 150px">
-              <template #body="{ data }">
-                <PTag :value="data.department" severity="info" />
-              </template>
-            </PColumn>
-            
-            <PColumn field="hire_date" header="Hire Date" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span>{{ formatDate(data.hire_date) }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="status" header="Status" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <PTag :value="data.status" :severity="getStatusSeverity(data.status)" />
-              </template>
-            </PColumn>
-            
-            <PColumn header="Actions" style="min-width: 150px">
-              <template #body="{ data }">
-                <div class="flex gap-2">
-                  <PButton 
-                    icon="pi pi-eye" 
-                    class="p-button-text p-button-sm"
-                    v-tooltip.top="'View Details'"
-                    @click="viewEmployee(data)" 
-                  />
-                  <PButton 
-                    v-can="'employee.update'"
-                    icon="pi pi-pencil" 
-                    class="p-button-text p-button-sm"
-                    v-tooltip.top="'Edit Employee'"
-                    @click="editEmployee(data)" 
-                  />
-                  <PButton 
-                    v-can="'employee.delete'"
-                    icon="pi pi-trash" 
-                    class="p-button-text p-button-sm p-button-danger"
-                    v-tooltip.top="'Delete Employee'"
-                    @click="deleteEmployee(data)" 
-                  />
-                </div>
-              </template>
-            </PColumn>
-          </PDataTable>
+          </PColumn>
 
-          <!-- Card View -->
-          <div v-else-if="selectedView === 'card'" class="grid">
-            <div
-              v-for="employee in employees"
-              :key="employee.id"
-              class="col-12 md:col-6 lg:col-4"
-            >
-              <PCard class="employee-card">
-                <template #content>
-                  <div class="text-center">
-                    <PAvatar 
-                      :label="employee.full_name.split(' ').map(n => n[0]).join('')" 
-                      shape="circle" 
-                      size="xlarge"
-                      class="bg-primary-100 text-primary-700 mb-3"
-                    />
-                    <h4 class="text-900 font-medium mb-1">{{ employee.full_name }}</h4>
-                    <p class="text-600 text-sm mb-2">{{ employee.position }}</p>
-                    <PTag :value="employee.department" severity="info" class="mb-3" />
-                    <div class="flex justify-content-center gap-2">
-                      <PButton 
-                        icon="pi pi-eye" 
-                        class="p-button-text p-button-sm"
-                        @click="viewEmployee(employee)" 
-                      />
-                      <PButton 
-                        v-can="'employee.update'"
-                        icon="pi pi-pencil" 
-                        class="p-button-text p-button-sm"
-                        @click="editEmployee(employee)" 
-                      />
-                      <PButton 
-                        v-can="'employee.delete'"
-                        icon="pi pi-trash" 
-                        class="p-button-text p-button-sm p-button-danger"
-                        @click="deleteEmployee(employee)" 
-                      />
-                    </div>
-                  </div>
-                </template>
-              </PCard>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
+          <PColumn field="position" header="Position" :sortable="true">
+            <template #body="{ data }">
+              <div>
+                <div class="font-medium">{{ data.position }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ data.department_name || 'No Department' }}
+                </div>
+              </div>
+            </template>
+          </PColumn>
 
-    <!-- Create/Edit Employee Dialog -->
+          <PColumn field="employment_type" header="Type" :sortable="true">
+            <template #body="{ data }">
+              <PTag 
+                :value="formatEmploymentType(data.employment_type)" 
+                :severity="getEmploymentTypeSeverity(data.employment_type)"
+              />
+            </template>
+          </PColumn>
+
+          <PColumn field="status" header="Status" :sortable="true">
+            <template #body="{ data }">
+              <PTag 
+                :value="formatStatus(data.status)" 
+                :severity="getStatusSeverity(data.status)"
+              />
+            </template>
+          </PColumn>
+
+          <PColumn field="hire_date" header="Hire Date" :sortable="true">
+            <template #body="{ data }">
+              {{ formatDate(data.hire_date) }}
+            </template>
+          </PColumn>
+
+          <PColumn field="base_salary" header="Salary" :sortable="true">
+            <template #body="{ data }">
+              <div v-if="data.base_salary">
+                {{ formatCurrency(data.base_salary, data.currency) }}
+              </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </PColumn>
+
+          <PColumn header="Actions" :exportable="false" style="min-width: 8rem">
+            <template #body="{ data }">
+              <div class="flex gap-2">
+                <Button 
+                  icon="pi pi-eye" 
+                  size="small"
+                  text
+                  @click="viewEmployee(data)"
+                  v-tooltip.top="'View Details'"
+                />
+                <Button 
+                  icon="pi pi-pencil" 
+                  size="small"
+                  text
+                  @click="editEmployee(data)"
+                  v-tooltip.top="'Edit'"
+                />
+                <Button 
+                  icon="pi pi-trash" 
+                  size="small"
+                  text
+                  severity="danger"
+                  @click="confirmDelete(data)"
+                  v-tooltip.top="'Delete'"
+                />
+              </div>
+            </template>
+          </PColumn>
+        </PDataTable>
+      </template>
+    </PCard>
+
+    <!-- Employee Details Dialog -->
     <PDialog 
-      v-model:visible="showCreateDialog" 
-      :header="editingEmployee ? 'Edit Employee' : 'Add New Employee'" 
-      :style="{ width: '800px' }"
+      v-model:visible="showEmployeeDialog" 
+      :header="selectedEmployee?.full_name || 'Employee Details'"
       :modal="true"
-      class="p-fluid"
+      :style="{ width: '50rem' }"
+      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
     >
-      <div class="grid">
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="employeeId" class="font-medium">Employee ID *</label>
-            <PInputText 
-              id="employeeId"
-              v-model="employeeForm.employee_id" 
-              placeholder="EMP001"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="status" class="font-medium">Status *</label>
-            <PDropdown 
-              id="status"
-              v-model="employeeForm.status" 
-              :options="statusOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Status"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="firstName" class="font-medium">First Name *</label>
-            <PInputText 
-              id="firstName"
-              v-model="employeeForm.first_name" 
-              placeholder="John"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="lastName" class="font-medium">Last Name *</label>
-            <PInputText 
-              id="lastName"
-              v-model="employeeForm.last_name" 
-              placeholder="Doe"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="email" class="font-medium">Email *</label>
-            <PInputText 
-              id="email"
-              v-model="employeeForm.email" 
-              placeholder="john.doe@company.com"
-              type="email"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="phone" class="font-medium">Phone</label>
-            <PInputText 
-              id="phone"
-              v-model="employeeForm.phone" 
-              placeholder="+1 234 567 8900"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="department" class="font-medium">Department *</label>
-            <PDropdown 
-              id="department"
-              v-model="employeeForm.department" 
-              :options="departmentOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Department"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="position" class="font-medium">Position *</label>
-            <PInputText 
-              id="position"
-              v-model="employeeForm.position" 
-              placeholder="Software Engineer"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="employmentType" class="font-medium">Employment Type *</label>
-            <PDropdown 
-              id="employmentType"
-              v-model="employeeForm.employment_type" 
-              :options="employmentTypeOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Type"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="hireDate" class="font-medium">Hire Date *</label>
-            <PCalendar 
-              id="hireDate"
-              v-model="employeeForm.hire_date" 
-              dateFormat="yy-mm-dd"
-              placeholder="Select Date"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="salary" class="font-medium">Base Salary</label>
-            <PInputNumber 
-              id="salary"
-              v-model="employeeForm.base_salary" 
-              mode="currency"
-              currency="USD"
-              locale="en-US"
-              placeholder="50000"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="field">
-            <label for="address" class="font-medium">Address</label>
-            <PTextarea 
-              id="address"
-              v-model="employeeForm.address" 
-              placeholder="Enter address"
-              rows="3"
-              class="w-full"
-            />
-          </div>
+      <EmployeeDetails 
+        v-if="selectedEmployee" 
+        :employee="selectedEmployee"
+        @close="showEmployeeDialog = false"
+        @edit="editEmployee"
+      />
+    </PDialog>
+
+    <!-- Import Dialog -->
+    <PDialog 
+      v-model:visible="showImportDialog" 
+      header="Import Employees"
+      :modal="true"
+      :style="{ width: '30rem' }"
+    >
+      <div class="space-y-4">
+        <PFileUpload 
+          mode="basic" 
+          name="file"
+          accept=".csv,.xlsx"
+          :max-file-size="1000000"
+          :auto="true"
+          choose-label="Choose File"
+          @upload="onFileUpload"
+        />
+        <div class="text-sm text-gray-500">
+          <p>Supported formats: CSV, Excel (.xlsx)</p>
+          <p>Maximum file size: 1MB</p>
         </div>
       </div>
-      
-      <template #footer>
-        <PButton 
-          label="Cancel" 
-          icon="pi pi-times" 
-          class="p-button-text" 
-          @click="closeDialog" 
-        />
-        <PButton 
-          :label="editingEmployee ? 'Update' : 'Create'" 
-          icon="pi pi-check" 
-          @click="saveEmployee" 
-        />
-      </template>
     </PDialog>
+
+    <!-- Delete Confirmation -->
+    <PConfirmDialog />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
+import type { Employee, PaginatedResponse } from '~/types/hrms'
 
+// Meta
 definePageMeta({
+  layout: 'default',
   middleware: 'auth'
 })
 
+// Composables
+const confirm = useConfirm()
 const toast = useToast()
 
-// Reactive data
-const employees = ref([])
-const loading = ref(false)
-const showCreateDialog = ref(false)
-const editingEmployee = ref(false)
-const selectedView = ref('table')
+// State
+const employees = ref<Employee[]>([])
+const departments = ref<any[]>([])
+const isLoading = ref(false)
+const totalRecords = ref(0)
+const showEmployeeDialog = ref(false)
+const showImportDialog = ref(false)
+const selectedEmployee = ref<Employee | null>(null)
 
 const filters = ref({
-  global: '',
+  search: '',
   department: null,
-  status: null,
-  employmentType: null
+  status: null
 })
 
-const employeeForm = ref({
-  employee_id: '',
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  department: null,
-  position: '',
-  employment_type: null,
-  hire_date: null,
-  base_salary: null,
-  address: '',
-  status: 'active'
+const pagination = ref({
+  first: 0,
+  rows: 25,
+  sortField: 'created_at',
+  sortOrder: -1
 })
 
 // Options
-const departmentOptions = ref([
-  { label: 'Engineering', value: 'Engineering' },
-  { label: 'Sales', value: 'Sales' },
-  { label: 'Marketing', value: 'Marketing' },
-  { label: 'Human Resources', value: 'Human Resources' },
-  { label: 'Finance', value: 'Finance' },
-  { label: 'Operations', value: 'Operations' }
-])
-
-const statusOptions = ref([
+const statusOptions = [
   { label: 'Active', value: 'active' },
   { label: 'Inactive', value: 'inactive' },
-  { label: 'On Leave', value: 'on_leave' },
-  { label: 'Terminated', value: 'terminated' }
-])
+  { label: 'Terminated', value: 'terminated' },
+  { label: 'On Leave', value: 'on_leave' }
+]
 
-const employmentTypeOptions = ref([
-  { label: 'Full Time', value: 'full_time' },
-  { label: 'Part Time', value: 'part_time' },
-  { label: 'Contract', value: 'contract' },
-  { label: 'Intern', value: 'intern' },
-  { label: 'Temporary', value: 'temporary' }
-])
-
-const viewOptions = ref([
-  { label: 'Table View', value: 'table' },
-  { label: 'Card View', value: 'card' }
-])
-
-// Mock data
-const mockEmployees = ref([
-  {
-    id: 1,
-    employee_id: 'EMP001',
-    first_name: 'John',
-    last_name: 'Doe',
-    full_name: 'John Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 234 567 8900',
-    department: 'Engineering',
-    position: 'Software Engineer',
-    employment_type: 'full_time',
-    hire_date: '2023-01-15',
-    base_salary: 75000,
-    address: '123 Main St, City, State 12345',
-    status: 'active'
-  },
-  {
-    id: 2,
-    employee_id: 'EMP002',
-    first_name: 'Jane',
-    last_name: 'Smith',
-    full_name: 'Jane Smith',
-    email: 'jane.smith@company.com',
-    phone: '+1 234 567 8901',
-    department: 'Marketing',
-    position: 'Marketing Manager',
-    employment_type: 'full_time',
-    hire_date: '2023-02-20',
-    base_salary: 65000,
-    address: '456 Oak Ave, City, State 12345',
-    status: 'active'
-  },
-  {
-    id: 3,
-    employee_id: 'EMP003',
-    first_name: 'Mike',
-    last_name: 'Johnson',
-    full_name: 'Mike Johnson',
-    email: 'mike.johnson@company.com',
-    phone: '+1 234 567 8902',
-    department: 'Sales',
-    position: 'Sales Representative',
-    employment_type: 'full_time',
-    hire_date: '2023-03-10',
-    base_salary: 55000,
-    address: '789 Pine St, City, State 12345',
-    status: 'on_leave'
-  }
+const departmentOptions = computed(() => [
+  { id: null, name: 'All Departments' },
+  ...departments.value
 ])
 
 // Methods
-const getStatusSeverity = (status: string) => {
-  switch (status) {
-    case 'active': return 'success'
-    case 'inactive': return 'warning'
-    case 'on_leave': return 'info'
-    case 'terminated': return 'danger'
-    default: return 'info'
-  }
-}
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
-}
-
-const viewEmployee = (employee: any) => {
-  navigateTo(`/employees/${employee.id}`)
-}
-
-const editEmployee = (employee: any) => {
-  editingEmployee.value = true
-  employeeForm.value = { ...employee }
-  showCreateDialog.value = true
-}
-
-const deleteEmployee = (employee: any) => {
-  // Show confirmation dialog
-  // TODO: Implement confirmation dialog
-  console.log('Delete employee:', employee)
-}
-
-const closeDialog = () => {
-  showCreateDialog.value = false
-  editingEmployee.value = false
-  resetForm()
-}
-
-const resetForm = () => {
-  employeeForm.value = {
-    employee_id: '',
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    department: null,
-    position: '',
-    employment_type: null,
-    hire_date: null,
-    base_salary: null,
-    address: '',
-    status: 'active'
-  }
-}
-
-const saveEmployee = () => {
-  if (editingEmployee.value) {
-    // Update existing employee
-    const index = employees.value.findIndex(emp => emp.id === employeeForm.value.id)
-    if (index !== -1) {
-      employees.value[index] = { ...employeeForm.value }
-    }
-    toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Employee updated successfully',
-      life: 3000
-    })
-  } else {
-    // Create new employee
-    const newEmployee = {
-      ...employeeForm.value,
-      id: employees.value.length + 1,
-      full_name: `${employeeForm.value.first_name} ${employeeForm.value.last_name}`
-    }
-    employees.value.unshift(newEmployee)
-    toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Employee created successfully',
-      life: 3000
-    })
-  }
-  closeDialog()
-}
-
-const refreshData = async () => {
-  loading.value = true
+const loadEmployees = async () => {
+  isLoading.value = true
   try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    toast.add({
-      severity: 'success',
-      summary: 'Data Refreshed',
-      detail: 'Employee data has been updated',
-      life: 3000
+    const params: any = {
+      page: Math.floor(pagination.value.first / pagination.value.rows) + 1,
+      per_page: pagination.value.rows,
+      ordering: pagination.value.sortOrder === 1 ? pagination.value.sortField : `-${pagination.value.sortField}`
+    }
+
+    if (filters.value.search) {
+      params.search = filters.value.search
+    }
+    if (filters.value.department) {
+      params.department = filters.value.department
+    }
+    if (filters.value.status) {
+      params.status = filters.value.status
+    }
+
+    const response = await $fetch<PaginatedResponse<Employee>>('/api/v1/employees/employees/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params
     })
+
+    employees.value = response.results
+    totalRecords.value = response.count
   } catch (error) {
+    console.error('Error loading employees:', error)
     toast.add({
       severity: 'error',
-      summary: 'Refresh Failed',
-      detail: 'Failed to refresh employee data',
+      summary: 'Error',
+      detail: 'Failed to load employees',
       life: 3000
     })
   } finally {
-    loading.value = false
+    isLoading.value = false
+  }
+}
+
+const loadDepartments = async () => {
+  try {
+    const response = await $fetch<PaginatedResponse<any>>('/api/v1/employees/departments/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params: { page_size: 100 }
+    })
+    departments.value = response.results
+  } catch (error) {
+    console.error('Error loading departments:', error)
+  }
+}
+
+const onSearch = useDebounceFn(() => {
+  pagination.value.first = 0
+  loadEmployees()
+}, 500)
+
+const onPageChange = (event: any) => {
+  pagination.value.first = event.first
+  pagination.value.rows = event.rows
+  loadEmployees()
+}
+
+const onSort = (event: any) => {
+  pagination.value.sortField = event.sortField
+  pagination.value.sortOrder = event.sortOrder
+  loadEmployees()
+}
+
+const viewEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee
+  showEmployeeDialog.value = true
+}
+
+const editEmployee = (employee: Employee) => {
+  navigateTo(`/employees/${employee.id}/edit`)
+}
+
+const confirmDelete = (employee: Employee) => {
+  confirm.require({
+    message: `Are you sure you want to delete ${employee.full_name}?`,
+    header: 'Confirm Delete',
+    icon: 'pi pi-exclamation-triangle',
+    acceptClass: 'p-button-danger',
+    accept: () => deleteEmployee(employee.id)
+  })
+}
+
+const deleteEmployee = async (id: string) => {
+  try {
+    await $fetch(`/api/v1/employees/employees/${id}/`, {
+      method: 'DELETE',
+      baseURL: useRuntimeConfig().public.apiUrl
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Employee deleted successfully',
+      life: 3000
+    })
+
+    loadEmployees()
+  } catch (error) {
+    console.error('Error deleting employee:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Failed to delete employee',
+      life: 3000
+    })
   }
 }
 
@@ -675,24 +420,87 @@ const exportEmployees = () => {
   toast.add({
     severity: 'info',
     summary: 'Export',
-    detail: 'Export functionality will be implemented',
+    detail: 'Export functionality coming soon',
     life: 3000
   })
 }
 
+const onFileUpload = (event: any) => {
+  // TODO: Implement file upload
+  toast.add({
+    severity: 'info',
+    summary: 'Upload',
+    detail: 'File upload functionality coming soon',
+    life: 3000
+  })
+}
+
+// Utility functions
+const formatEmploymentType = (type: string) => {
+  return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const getEmploymentTypeSeverity = (type: string) => {
+  const severities = {
+    full_time: 'success',
+    part_time: 'info',
+    contract: 'warning',
+    intern: 'secondary',
+    temporary: 'danger'
+  }
+  return severities[type as keyof typeof severities] || 'secondary'
+}
+
+const formatStatus = (status: string) => {
+  return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const getStatusSeverity = (status: string) => {
+  const severities = {
+    active: 'success',
+    inactive: 'secondary',
+    terminated: 'danger',
+    on_leave: 'warning'
+  }
+  return severities[status as keyof typeof severities] || 'secondary'
+}
+
+const getStatusColor = (status: string) => {
+  const colors = {
+    active: 'bg-green-100 text-green-600',
+    inactive: 'bg-gray-100 text-gray-600',
+    terminated: 'bg-red-100 text-red-600',
+    on_leave: 'bg-yellow-100 text-yellow-600'
+  }
+  return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-600'
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString()
+}
+
+const formatCurrency = (amount: string, currency: string = 'USD') => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency
+  }).format(parseFloat(amount))
+}
+
+// Lifecycle
 onMounted(() => {
-  employees.value = mockEmployees.value
+  loadEmployees()
+  loadDepartments()
 })
 </script>
 
 <style scoped>
-.employee-card {
-  height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s;
+.employees-page {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.employee-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.page-header {
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 1.5rem;
 }
 </style>

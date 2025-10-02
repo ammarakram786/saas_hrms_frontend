@@ -1,847 +1,656 @@
 <template>
-  <div class="grid">
+  <div class="attendance-page">
     <!-- Page Header -->
-    <div class="col-12">
-      <div class="card">
-        <div class="flex justify-content-between align-items-center">
-          <div>
-            <h1 class="text-3xl font-bold text-900 m-0">Attendance Management</h1>
-            <p class="text-600 mt-2 mb-0">Track and manage employee attendance</p>
-          </div>
-          <div class="flex align-items-center gap-3">
-            <PButton 
-              label="Export Report" 
-              icon="pi pi-download" 
-              class="p-button-outlined"
-              @click="exportReport"
-            />
-            <PButton 
-              label="Clock In/Out" 
-              icon="pi pi-clock" 
-              @click="showClockDialog = true"
-            />
-          </div>
+    <div class="page-header mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Attendance Management</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Track and manage employee attendance</p>
+        </div>
+        <div class="flex gap-3">
+          <Button 
+            icon="pi pi-clock" 
+            :label="isClockedIn ? 'Clock Out' : 'Clock In'"
+            :severity="isClockedIn ? 'danger' : 'success'"
+            @click="toggleClockInOut"
+            :loading="isClockLoading"
+          />
+          <Button 
+            icon="pi pi-plus" 
+            label="Add Attendance" 
+            @click="showAddDialog = true"
+          />
         </div>
       </div>
     </div>
 
     <!-- Quick Stats -->
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Present Today</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.presentToday }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-check-circle text-green-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Absent Today</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.absentToday }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-red-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-times-circle text-red-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Late Arrivals</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.lateArrivals }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-clock text-orange-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">On Leave</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.onLeave }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-calendar text-blue-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Clock In/Out Section -->
-    <div class="col-12 lg:col-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <PCard>
-        <template #title>Quick Clock In/Out</template>
         <template #content>
-          <div class="text-center">
-            <div class="mb-4">
-              <i class="pi pi-clock text-6xl text-primary-500"></i>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Present Today</p>
+              <p class="text-3xl font-bold text-green-600">{{ stats.present_today || 0 }}</p>
             </div>
-            <div class="text-2xl font-bold text-900 mb-2">{{ currentTime }}</div>
-            <div class="text-600 mb-4">{{ currentDate }}</div>
-            
-            <div v-if="!isClockedIn" class="mb-4">
-              <PButton 
-                label="Clock In" 
-                icon="pi pi-play" 
+            <i class="pi pi-check-circle text-3xl text-green-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Absent Today</p>
+              <p class="text-3xl font-bold text-red-600">{{ stats.absent_today || 0 }}</p>
+            </div>
+            <i class="pi pi-times-circle text-3xl text-red-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Late Today</p>
+              <p class="text-3xl font-bold text-orange-600">{{ stats.late_today || 0 }}</p>
+            </div>
+            <i class="pi pi-clock text-3xl text-orange-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Attendance Rate</p>
+              <p class="text-3xl font-bold text-blue-600">{{ stats.attendance_rate || 0 }}%</p>
+            </div>
+            <i class="pi pi-chart-line text-3xl text-blue-500"></i>
+          </div>
+        </template>
+      </PCard>
+    </div>
+
+    <!-- Filters and Search -->
+    <PCard class="mb-6">
+      <template #content>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="md:col-span-2">
+            <div class="p-input-icon-left">
+              <i class="pi pi-search" />
+              <PInputText 
+                v-model="filters.search" 
+                placeholder="Search employees..."
                 class="w-full"
-                @click="clockIn"
-                :loading="clockingIn"
-              />
-            </div>
-            
-            <div v-else class="mb-4">
-              <PButton 
-                label="Clock Out" 
-                icon="pi pi-stop" 
-                class="w-full p-button-danger"
-                @click="clockOut"
-                :loading="clockingOut"
-              />
-            </div>
-            
-            <div v-if="isClockedIn" class="text-center">
-              <div class="text-600 text-sm">Clocked in at:</div>
-              <div class="font-medium">{{ clockInTime }}</div>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Attendance Chart -->
-    <div class="col-12 lg:col-8">
-      <PCard>
-        <template #title>
-          <div class="flex justify-content-between align-items-center">
-            <span>Attendance Trend</span>
-            <PDropdown 
-              v-model="selectedPeriod" 
-              :options="periodOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              class="w-8rem"
-            />
-          </div>
-        </template>
-        <template #content>
-          <PChart type="line" :data="chartData" :options="chartOptions" style="height: 300px" />
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Filters -->
-    <div class="col-12">
-      <PCard>
-        <template #title>Filters</template>
-        <template #content>
-          <div class="grid">
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="dateFrom" class="font-medium">From Date</label>
-                <PCalendar 
-                  id="dateFrom"
-                  v-model="filters.dateFrom" 
-                  dateFormat="yy-mm-dd"
-                  placeholder="Select Date"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="dateTo" class="font-medium">To Date</label>
-                <PCalendar 
-                  id="dateTo"
-                  v-model="filters.dateTo" 
-                  dateFormat="yy-mm-dd"
-                  placeholder="Select Date"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="employee" class="font-medium">Employee</label>
-                <PDropdown 
-                  id="employee"
-                  v-model="filters.employee" 
-                  :options="employeeOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Employees"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="status" class="font-medium">Status</label>
-                <PDropdown 
-                  id="status"
-                  v-model="filters.status" 
-                  :options="statusOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Statuses"
-                  class="w-full"
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Attendance Records -->
-    <div class="col-12">
-      <PCard>
-        <template #title>
-          <div class="flex justify-content-between align-items-center">
-            <span>Attendance Records</span>
-            <div class="flex align-items-center gap-2">
-              <PButton 
-                icon="pi pi-refresh" 
-                class="p-button-outlined p-button-sm"
-                @click="refreshData"
-                :loading="loading"
-              />
-              <PButton 
-                label="Add Record" 
-                icon="pi pi-plus" 
-                class="p-button-outlined p-button-sm"
-                @click="showAddDialog = true"
+                @input="onSearch"
               />
             </div>
           </div>
-        </template>
-        <template #content>
-          <PDataTable 
-            :value="attendanceRecords" 
-            :paginator="true" 
-            :rows="20"
-            :filters="filters"
-            filterDisplay="row"
-            :loading="loading"
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            :rowsPerPageOptions="[10, 20, 50, 100]"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            :globalFilterFields="['employee.full_name', 'employee.employee_id']"
-            responsiveLayout="scroll"
-            :scrollable="true"
-            scrollHeight="600px"
-          >
-            <template #empty>
-              <div class="text-center py-4">
-                <i class="pi pi-calendar text-4xl text-400 mb-3"></i>
-                <p class="text-600">No attendance records found</p>
-              </div>
-            </template>
-            
-            <PColumn field="employee.full_name" header="Employee" sortable style="min-width: 200px">
-              <template #body="{ data }">
-                <div class="flex align-items-center gap-2">
-                  <PAvatar 
-                    :label="data.employee.full_name.split(' ').map(n => n[0]).join('')" 
-                    shape="circle" 
-                    size="normal"
-                    class="bg-primary-100 text-primary-700"
-                  />
-                  <div>
-                    <div class="font-medium">{{ data.employee.full_name }}</div>
-                    <div class="text-sm text-500">{{ data.employee.employee_id }}</div>
-                  </div>
-                </div>
-              </template>
-            </PColumn>
-            
-            <PColumn field="date" header="Date" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span>{{ formatDate(data.date) }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="check_in" header="Check In" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span v-if="data.check_in">{{ formatTime(data.check_in) }}</span>
-                <span v-else class="text-500">-</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="check_out" header="Check Out" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span v-if="data.check_out">{{ formatTime(data.check_out) }}</span>
-                <span v-else class="text-500">-</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="hours_worked" header="Hours" sortable style="min-width: 100px">
-              <template #body="{ data }">
-                <span>{{ data.hours_worked || '-' }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="status" header="Status" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <PTag :value="data.status" :severity="getStatusSeverity(data.status)" />
-              </template>
-            </PColumn>
-            
-            <PColumn field="overtime_hours" header="Overtime" sortable style="min-width: 100px">
-              <template #body="{ data }">
-                <span>{{ data.overtime_hours || '-' }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn header="Actions" style="min-width: 120px">
-              <template #body="{ data }">
-                <div class="flex gap-2">
-                  <PButton 
-                    icon="pi pi-pencil" 
-                    class="p-button-text p-button-sm"
-                    v-tooltip.top="'Edit Record'"
-                    @click="editRecord(data)" 
-                  />
-                  <PButton 
-                    icon="pi pi-trash" 
-                    class="p-button-text p-button-sm p-button-danger"
-                    v-tooltip.top="'Delete Record'"
-                    @click="deleteRecord(data)" 
-                  />
-                </div>
-              </template>
-            </PColumn>
-          </PDataTable>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Clock In/Out Dialog -->
-    <PDialog 
-      v-model:visible="showClockDialog" 
-      header="Clock In/Out" 
-      :style="{ width: '400px' }"
-      :modal="true"
-    >
-      <div class="text-center">
-        <div class="mb-4">
-          <i class="pi pi-clock text-6xl text-primary-500"></i>
-        </div>
-        <div class="text-2xl font-bold text-900 mb-2">{{ currentTime }}</div>
-        <div class="text-600 mb-4">{{ currentDate }}</div>
-        
-        <div class="field">
-          <label for="notes" class="font-medium">Notes (Optional)</label>
-          <PTextarea 
-            id="notes"
-            v-model="clockNotes" 
-            placeholder="Add any notes..."
-            rows="3"
-            class="w-full"
+          <PCalendar 
+            v-model="filters.date" 
+            placeholder="Select Date"
+            date-format="yy-mm-dd"
+            @date-select="loadAttendance"
+          />
+          <PDropdown 
+            v-model="filters.status" 
+            :options="statusOptions" 
+            option-label="label"
+            option-value="value"
+            placeholder="All Status"
+            @change="loadAttendance"
+          />
+          <PDropdown 
+            v-model="filters.department" 
+            :options="departmentOptions" 
+            option-label="name"
+            option-value="id"
+            placeholder="All Departments"
+            @change="loadAttendance"
           />
         </div>
-      </div>
-      
-      <template #footer>
-        <PButton 
-          label="Cancel" 
-          icon="pi pi-times" 
-          class="p-button-text" 
-          @click="showClockDialog = false" 
-        />
-        <PButton 
-          :label="isClockedIn ? 'Clock Out' : 'Clock In'" 
-          :icon="isClockedIn ? 'pi pi-stop' : 'pi pi-play'"
-          :class="isClockedIn ? 'p-button-danger' : ''"
-          @click="isClockedIn ? clockOut() : clockIn()" 
-        />
       </template>
-    </PDialog>
+    </PCard>
 
-    <!-- Add/Edit Record Dialog -->
+    <!-- Attendance Table -->
+    <PCard>
+      <template #title>
+        <div class="flex justify-between items-center">
+          <span>Attendance Records ({{ totalRecords }})</span>
+          <div class="flex gap-2">
+            <Button 
+              icon="pi pi-refresh" 
+              @click="loadAttendance"
+              :loading="isLoading"
+              text
+              size="small"
+            />
+            <Button 
+              icon="pi pi-download" 
+              @click="exportAttendance"
+              text
+              size="small"
+            />
+          </div>
+        </div>
+      </template>
+      <template #content>
+        <PDataTable 
+          :value="attendanceRecords" 
+          :loading="isLoading"
+          :paginator="true"
+          :rows="pagination.rows"
+          :total-records="totalRecords"
+          :lazy="true"
+          @page="onPageChange"
+          @sort="onSort"
+          :sort-field="pagination.sortField"
+          :sort-order="pagination.sortOrder"
+          :rows-per-page-options="[10, 25, 50]"
+          paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+          current-page-report-template="Showing {first} to {last} of {totalRecords} records"
+        >
+          <template #empty>
+            <div class="text-center py-8">
+              <i class="pi pi-clock text-4xl text-gray-400 mb-2"></i>
+              <p class="text-gray-500 dark:text-gray-400">No attendance records found</p>
+            </div>
+          </template>
+
+          <PColumn field="employee_name" header="Employee" :sortable="true">
+            <template #body="{ data }">
+              <div class="flex items-center space-x-3">
+                <PAvatar 
+                  :label="data.employee_name?.charAt(0) || 'E'" 
+                  size="small"
+                  :class="getStatusColor(data.status)"
+                />
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ data.employee_name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ data.employee_id }}
+                  </div>
+                </div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="date" header="Date" :sortable="true">
+            <template #body="{ data }">
+              <div>
+                <div class="font-medium">{{ formatDate(data.date) }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ getDayOfWeek(data.date) }}
+                </div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="check_in" header="Check In" :sortable="true">
+            <template #body="{ data }">
+              <div v-if="data.check_in">
+                <div class="font-medium">{{ formatTime(data.check_in) }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ getTimeAgo(data.check_in) }}
+                </div>
+              </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </PColumn>
+
+          <PColumn field="check_out" header="Check Out" :sortable="true">
+            <template #body="{ data }">
+              <div v-if="data.check_out">
+                <div class="font-medium">{{ formatTime(data.check_out) }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ getTimeAgo(data.check_out) }}
+                </div>
+              </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </PColumn>
+
+          <PColumn field="hours_worked" header="Hours Worked" :sortable="true">
+            <template #body="{ data }">
+              <div v-if="data.hours_worked">
+                <div class="font-medium">{{ data.hours_worked }}h</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ data.overtime_hours || '0' }}h overtime
+                </div>
+              </div>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </PColumn>
+
+          <PColumn field="status" header="Status" :sortable="true">
+            <template #body="{ data }">
+              <PTag 
+                :value="formatStatus(data.status)" 
+                :severity="getStatusSeverity(data.status)"
+              />
+            </template>
+          </PColumn>
+
+          <PColumn field="shift" header="Shift">
+            <template #body="{ data }">
+              <span v-if="data.shift" class="text-sm">{{ data.shift }}</span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </PColumn>
+
+          <PColumn header="Actions" :exportable="false" style="min-width: 8rem">
+            <template #body="{ data }">
+              <div class="flex gap-2">
+                <Button 
+                  icon="pi pi-eye" 
+                  size="small"
+                  text
+                  @click="viewAttendance(data)"
+                  v-tooltip.top="'View Details'"
+                />
+                <Button 
+                  icon="pi pi-pencil" 
+                  size="small"
+                  text
+                  @click="editAttendance(data)"
+                  v-tooltip.top="'Edit'"
+                />
+                <Button 
+                  icon="pi pi-trash" 
+                  size="small"
+                  text
+                  severity="danger"
+                  @click="confirmDelete(data)"
+                  v-tooltip.top="'Delete'"
+                />
+              </div>
+            </template>
+          </PColumn>
+        </PDataTable>
+      </template>
+    </PCard>
+
+    <!-- Add/Edit Attendance Dialog -->
     <PDialog 
       v-model:visible="showAddDialog" 
-      :header="editingRecord ? 'Edit Attendance Record' : 'Add Attendance Record'" 
-      :style="{ width: '600px' }"
+      :header="editingAttendance ? 'Edit Attendance' : 'Add Attendance'"
       :modal="true"
-      class="p-fluid"
+      :style="{ width: '50rem' }"
+      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
     >
-      <div class="grid">
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="employee" class="font-medium">Employee *</label>
-            <PDropdown 
-              id="employee"
-              v-model="recordForm.employee_id" 
-              :options="employeeOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Employee"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="date" class="font-medium">Date *</label>
-            <PCalendar 
-              id="date"
-              v-model="recordForm.date" 
-              dateFormat="yy-mm-dd"
-              placeholder="Select Date"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="checkIn" class="font-medium">Check In Time</label>
-            <PCalendar 
-              id="checkIn"
-              v-model="recordForm.check_in" 
-              timeOnly
-              placeholder="Select Time"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="checkOut" class="font-medium">Check Out Time</label>
-            <PCalendar 
-              id="checkOut"
-              v-model="recordForm.check_out" 
-              timeOnly
-              placeholder="Select Time"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="status" class="font-medium">Status *</label>
-            <PDropdown 
-              id="status"
-              v-model="recordForm.status" 
-              :options="statusOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Status"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="overtime" class="font-medium">Overtime Hours</label>
-            <PInputNumber 
-              id="overtime"
-              v-model="recordForm.overtime_hours" 
-              placeholder="0"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="field">
-            <label for="notes" class="font-medium">Notes</label>
-            <PTextarea 
-              id="notes"
-              v-model="recordForm.notes" 
-              placeholder="Add any notes..."
-              rows="3"
-              class="w-full"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <template #footer>
-        <PButton 
-          label="Cancel" 
-          icon="pi pi-times" 
-          class="p-button-text" 
-          @click="closeRecordDialog" 
-        />
-        <PButton 
-          :label="editingRecord ? 'Update' : 'Create'" 
-          icon="pi pi-check" 
-          @click="saveRecord" 
-        />
-      </template>
+      <AttendanceForm 
+        :attendance="editingAttendance"
+        @close="showAddDialog = false"
+        @save="onAttendanceSave"
+      />
     </PDialog>
+
+    <!-- Attendance Details Dialog -->
+    <PDialog 
+      v-model:visible="showDetailsDialog" 
+      :header="selectedAttendance?.employee_name + ' - ' + formatDate(selectedAttendance?.date)"
+      :modal="true"
+      :style="{ width: '40rem' }"
+    >
+      <AttendanceDetails 
+        v-if="selectedAttendance" 
+        :attendance="selectedAttendance"
+        @close="showDetailsDialog = false"
+        @edit="editAttendance"
+      />
+    </PDialog>
+
+    <!-- Delete Confirmation -->
+    <PConfirmDialog />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '~/stores/auth'
+import type { Attendance, PaginatedResponse, AttendanceStats } from '~/types/hrms'
 
+// Meta
 definePageMeta({
+  layout: 'default',
   middleware: 'auth'
 })
 
+// Composables
+const confirm = useConfirm()
 const toast = useToast()
+const authStore = useAuthStore()
 
-// Reactive data
-const loading = ref(false)
-const showClockDialog = ref(false)
+// State
+const attendanceRecords = ref<Attendance[]>([])
+const departments = ref<any[]>([])
+const isLoading = ref(false)
+const isClockLoading = ref(false)
+const totalRecords = ref(0)
 const showAddDialog = ref(false)
-const editingRecord = ref(false)
-const clockingIn = ref(false)
-const clockingOut = ref(false)
-const isClockedIn = ref(false)
-const clockInTime = ref('')
-const currentTime = ref('')
-const currentDate = ref('')
-const clockNotes = ref('')
+const showDetailsDialog = ref(false)
+const selectedAttendance = ref<Attendance | null>(null)
+const editingAttendance = ref<Attendance | null>(null)
 
-const selectedPeriod = ref('week')
+const stats = ref<AttendanceStats>({
+  present_today: 0,
+  absent_today: 0,
+  late_today: 0,
+  on_leave_today: 0,
+  attendance_rate: 0,
+  average_hours_worked: 0,
+  overtime_hours: 0
+})
 
 const filters = ref({
-  dateFrom: null,
-  dateTo: null,
-  employee: null,
-  status: null
+  search: '',
+  date: new Date(),
+  status: null,
+  department: null
 })
 
-const recordForm = ref({
-  employee_id: null,
-  date: null,
-  check_in: null,
-  check_out: null,
-  status: 'present',
-  overtime_hours: null,
-  notes: ''
-})
-
-// Stats
-const stats = ref({
-  presentToday: 108,
-  absentToday: 12,
-  lateArrivals: 5,
-  onLeave: 8
+const pagination = ref({
+  first: 0,
+  rows: 25,
+  sortField: 'date',
+  sortOrder: -1
 })
 
 // Options
-const periodOptions = ref([
-  { label: 'This Week', value: 'week' },
-  { label: 'This Month', value: 'month' },
-  { label: 'Last 3 Months', value: 'quarter' },
-  { label: 'This Year', value: 'year' }
-])
-
-const employeeOptions = ref([
-  { label: 'John Doe', value: 1 },
-  { label: 'Jane Smith', value: 2 },
-  { label: 'Mike Johnson', value: 3 }
-])
-
-const statusOptions = ref([
+const statusOptions = [
   { label: 'Present', value: 'present' },
   { label: 'Absent', value: 'absent' },
   { label: 'Late', value: 'late' },
   { label: 'Half Day', value: 'half_day' },
-  { label: 'On Leave', value: 'on_leave' }
+  { label: 'On Leave', value: 'on_leave' },
+  { label: 'Holiday', value: 'holiday' },
+  { label: 'Weekend', value: 'weekend' }
+]
+
+const departmentOptions = computed(() => [
+  { id: null, name: 'All Departments' },
+  ...departments.value
 ])
 
-// Mock data
-const attendanceRecords = ref([
-  {
-    id: 1,
-    employee: {
-      id: 1,
-      full_name: 'John Doe',
-      employee_id: 'EMP001'
-    },
-    date: '2024-01-15',
-    check_in: '09:00:00',
-    check_out: '17:30:00',
-    hours_worked: 8.5,
-    status: 'present',
-    overtime_hours: 0.5,
-    notes: ''
-  },
-  {
-    id: 2,
-    employee: {
-      id: 2,
-      full_name: 'Jane Smith',
-      employee_id: 'EMP002'
-    },
-    date: '2024-01-15',
-    check_in: '09:15:00',
-    check_out: '18:00:00',
-    hours_worked: 8.75,
-    status: 'late',
-    overtime_hours: 0.75,
-    notes: 'Traffic delay'
-  },
-  {
-    id: 3,
-    employee: {
-      id: 3,
-      full_name: 'Mike Johnson',
-      employee_id: 'EMP003'
-    },
-    date: '2024-01-15',
-    check_in: null,
-    check_out: null,
-    hours_worked: 0,
-    status: 'on_leave',
-    overtime_hours: 0,
-    notes: 'Sick leave'
-  }
-])
-
-// Chart data
-const chartData = computed(() => ({
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      label: 'Present',
-      data: [95, 98, 92, 96, 94, 88, 85],
-      borderColor: '#10B981',
-      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-      tension: 0.4
-    },
-    {
-      label: 'Absent',
-      data: [5, 2, 8, 4, 6, 12, 15],
-      borderColor: '#EF4444',
-      backgroundColor: 'rgba(239, 68, 68, 0.1)',
-      tension: 0.4
-    }
-  ]
-}))
-
-const chartOptions = ref({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'top'
-    }
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      max: 100
-    }
-  }
+// Computed
+const isClockedIn = computed(() => {
+  // TODO: Check if current user is clocked in
+  return false
 })
 
 // Methods
-const getStatusSeverity = (status: string) => {
-  switch (status) {
-    case 'present': return 'success'
-    case 'absent': return 'danger'
-    case 'late': return 'warning'
-    case 'half_day': return 'info'
-    case 'on_leave': return 'info'
-    default: return 'info'
-  }
-}
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
-}
-
-const formatTime = (time: string) => {
-  return new Date(`2000-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-const updateTime = () => {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString()
-  currentDate.value = now.toLocaleDateString()
-}
-
-const clockIn = async () => {
-  clockingIn.value = true
+const loadAttendance = async () => {
+  isLoading.value = true
   try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    isClockedIn.value = true
-    clockInTime.value = currentTime.value
-    showClockDialog.value = false
-    clockNotes.value = ''
-    toast.add({
-      severity: 'success',
-      summary: 'Clock In Successful',
-      detail: 'You have been clocked in at ' + currentTime.value,
-      life: 3000
+    const params: any = {
+      page: Math.floor(pagination.value.first / pagination.value.rows) + 1,
+      per_page: pagination.value.rows,
+      ordering: pagination.value.sortOrder === 1 ? pagination.value.sortField : `-${pagination.value.sortField}`
+    }
+
+    if (filters.value.search) {
+      params.search = filters.value.search
+    }
+    if (filters.value.date) {
+      params.date = filters.value.date.toISOString().split('T')[0]
+    }
+    if (filters.value.status) {
+      params.status = filters.value.status
+    }
+    if (filters.value.department) {
+      params.department = filters.value.department
+    }
+
+    const response = await $fetch<PaginatedResponse<Attendance>>('/api/v1/attendance/attendance/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params
     })
+
+    attendanceRecords.value = response.results
+    totalRecords.value = response.count
   } catch (error) {
+    console.error('Error loading attendance:', error)
     toast.add({
       severity: 'error',
-      summary: 'Clock In Failed',
-      detail: 'Failed to clock in',
+      summary: 'Error',
+      detail: 'Failed to load attendance records',
       life: 3000
     })
   } finally {
-    clockingIn.value = false
+    isLoading.value = false
   }
 }
 
-const clockOut = async () => {
-  clockingOut.value = true
+const loadStats = async () => {
   try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    isClockedIn.value = false
-    clockInTime.value = ''
-    showClockDialog.value = false
-    clockNotes.value = ''
-    toast.add({
-      severity: 'success',
-      summary: 'Clock Out Successful',
-      detail: 'You have been clocked out at ' + currentTime.value,
-      life: 3000
+    const response = await $fetch<AttendanceStats>('/api/v1/attendance/attendance/statistics/', {
+      baseURL: useRuntimeConfig().public.apiUrl
     })
+    stats.value = response
   } catch (error) {
+    console.error('Error loading attendance stats:', error)
+  }
+}
+
+const loadDepartments = async () => {
+  try {
+    const response = await $fetch<PaginatedResponse<any>>('/api/v1/employees/departments/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params: { page_size: 100 }
+    })
+    departments.value = response.results
+  } catch (error) {
+    console.error('Error loading departments:', error)
+  }
+}
+
+const onSearch = useDebounceFn(() => {
+  pagination.value.first = 0
+  loadAttendance()
+}, 500)
+
+const onPageChange = (event: any) => {
+  pagination.value.first = event.first
+  pagination.value.rows = event.rows
+  loadAttendance()
+}
+
+const onSort = (event: any) => {
+  pagination.value.sortField = event.sortField
+  pagination.value.sortOrder = event.sortOrder
+  loadAttendance()
+}
+
+const toggleClockInOut = async () => {
+  isClockLoading.value = true
+  try {
+    if (isClockedIn.value) {
+      await $fetch('/api/v1/attendance/clock-out/', {
+        method: 'POST',
+        baseURL: useRuntimeConfig().public.apiUrl
+      })
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Clocked Out',
+        detail: 'You have been clocked out successfully',
+        life: 3000
+      })
+    } else {
+      await $fetch('/api/v1/attendance/clock-in/', {
+        method: 'POST',
+        baseURL: useRuntimeConfig().public.apiUrl
+      })
+      
+      toast.add({
+        severity: 'success',
+        summary: 'Clocked In',
+        detail: 'You have been clocked in successfully',
+        life: 3000
+      })
+    }
+    
+    loadAttendance()
+    loadStats()
+  } catch (error) {
+    console.error('Error toggling clock in/out:', error)
     toast.add({
       severity: 'error',
-      summary: 'Clock Out Failed',
-      detail: 'Failed to clock out',
+      summary: 'Error',
+      detail: 'Failed to clock in/out',
       life: 3000
     })
   } finally {
-    clockingOut.value = false
+    isClockLoading.value = false
   }
 }
 
-const editRecord = (record: any) => {
-  editingRecord.value = true
-  recordForm.value = { ...record }
+const viewAttendance = (attendance: Attendance) => {
+  selectedAttendance.value = attendance
+  showDetailsDialog.value = true
+}
+
+const editAttendance = (attendance: Attendance) => {
+  editingAttendance.value = attendance
   showAddDialog.value = true
 }
 
-const deleteRecord = (record: any) => {
-  // TODO: Implement delete functionality
-  console.log('Delete record:', record)
+const confirmDelete = (attendance: Attendance) => {
+  confirm.require({
+    message: `Are you sure you want to delete this attendance record?`,
+    header: 'Confirm Delete',
+    icon: 'pi pi-exclamation-triangle',
+    acceptClass: 'p-button-danger',
+    accept: () => deleteAttendance(attendance.id)
+  })
 }
 
-const closeRecordDialog = () => {
-  showAddDialog.value = false
-  editingRecord.value = false
-  resetRecordForm()
-}
-
-const resetRecordForm = () => {
-  recordForm.value = {
-    employee_id: null,
-    date: null,
-    check_in: null,
-    check_out: null,
-    status: 'present',
-    overtime_hours: null,
-    notes: ''
-  }
-}
-
-const saveRecord = () => {
-  if (editingRecord.value) {
-    // Update existing record
-    const index = attendanceRecords.value.findIndex(record => record.id === recordForm.value.id)
-    if (index !== -1) {
-      attendanceRecords.value[index] = { ...recordForm.value }
-    }
-    toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Attendance record updated successfully',
-      life: 3000
-    })
-  } else {
-    // Create new record
-    const newRecord = {
-      ...recordForm.value,
-      id: attendanceRecords.value.length + 1,
-      employee: employeeOptions.value.find(emp => emp.value === recordForm.value.employee_id)
-    }
-    attendanceRecords.value.unshift(newRecord)
-    toast.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Attendance record created successfully',
-      life: 3000
-    })
-  }
-  closeRecordDialog()
-}
-
-const refreshData = async () => {
-  loading.value = true
+const deleteAttendance = async (id: string) => {
   try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await $fetch(`/api/v1/attendance/attendance/${id}/`, {
+      method: 'DELETE',
+      baseURL: useRuntimeConfig().public.apiUrl
+    })
+
     toast.add({
       severity: 'success',
-      summary: 'Data Refreshed',
-      detail: 'Attendance data has been updated',
+      summary: 'Success',
+      detail: 'Attendance record deleted successfully',
       life: 3000
     })
+
+    loadAttendance()
   } catch (error) {
+    console.error('Error deleting attendance:', error)
     toast.add({
       severity: 'error',
-      summary: 'Refresh Failed',
-      detail: 'Failed to refresh attendance data',
+      summary: 'Error',
+      detail: 'Failed to delete attendance record',
       life: 3000
     })
-  } finally {
-    loading.value = false
   }
 }
 
-const exportReport = () => {
+const onAttendanceSave = () => {
+  showAddDialog.value = false
+  editingAttendance.value = null
+  loadAttendance()
+  loadStats()
+}
+
+const exportAttendance = () => {
   // TODO: Implement export functionality
   toast.add({
     severity: 'info',
     summary: 'Export',
-    detail: 'Export functionality will be implemented',
+    detail: 'Export functionality coming soon',
     life: 3000
   })
 }
 
-let timeInterval: NodeJS.Timeout
+// Utility functions
+const formatStatus = (status: string) => {
+  return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
 
-onMounted(() => {
-  updateTime()
-  timeInterval = setInterval(updateTime, 1000)
-})
-
-onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval)
+const getStatusSeverity = (status: string) => {
+  const severities = {
+    present: 'success',
+    absent: 'danger',
+    late: 'warning',
+    half_day: 'info',
+    on_leave: 'secondary',
+    holiday: 'info',
+    weekend: 'secondary'
   }
+  return severities[status as keyof typeof severities] || 'secondary'
+}
+
+const getStatusColor = (status: string) => {
+  const colors = {
+    present: 'bg-green-100 text-green-600',
+    absent: 'bg-red-100 text-red-600',
+    late: 'bg-orange-100 text-orange-600',
+    half_day: 'bg-blue-100 text-blue-600',
+    on_leave: 'bg-yellow-100 text-yellow-600',
+    holiday: 'bg-purple-100 text-purple-600',
+    weekend: 'bg-gray-100 text-gray-600'
+  }
+  return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-600'
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString()
+}
+
+const formatTime = (timeString: string) => {
+  return new Date(timeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const getDayOfWeek = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString([], { weekday: 'long' })
+}
+
+const getTimeAgo = (timeString: string) => {
+  const now = new Date()
+  const time = new Date(timeString)
+  const diffInHours = Math.floor((now.getTime() - time.getTime()) / (1000 * 60 * 60))
+  
+  if (diffInHours < 1) {
+    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60))
+    return `${diffInMinutes}m ago`
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`
+  } else {
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays}d ago`
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadAttendance()
+  loadStats()
+  loadDepartments()
 })
 </script>
 
 <style scoped>
-.stat-card {
-  height: 100%;
+.attendance-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 1.5rem;
 }
 </style>

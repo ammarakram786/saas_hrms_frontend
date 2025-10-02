@@ -1,12 +1,12 @@
 <template>
   <div class="layout-config">
-    <PButton 
+    <Button 
       type="button" 
       class="p-link layout-config-button"
       @click="onConfigButtonClick"
     >
       <i class="pi pi-cog"></i>
-    </PButton>
+    </Button>
 
     <PSidebar 
       v-model:visible="configSidebarVisible" 

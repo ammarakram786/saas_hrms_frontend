@@ -58,9 +58,8 @@ export const useAuthStore = defineStore('auth', {
 
       try {
         const { $api } = useNuxtApp()
-        const toast = useToast()
 
-        const response = await $api('/api/v1/auth/login/', {
+        const response = await $api.call('/api/v1/auth/login/', {
           method: 'POST',
           body: credentials
         })
@@ -85,14 +84,6 @@ export const useAuthStore = defineStore('auth', {
 
         // Get user permissions and tenant info
         await this.fetchUserPermissions()
-
-        // Show success message
-        toast.add({
-          severity: 'success',
-          summary: 'Login Successful',
-          detail: `Welcome back, ${this.userFullName}!`,
-          life: 3000
-        })
 
         return response
       } catch (error: any) {

@@ -1,86 +1,154 @@
 import { ref, computed } from 'vue'
 
-export const useLayout = () => {
-  const layoutConfig = ref({
-    ripple: true,
-    darkTheme: false,
-    inputStyle: 'outlined',
-    menuMode: 'static',
-    theme: 'sakai',
-    colorScheme: 'light',
-    menuTheme: 'light'
-  })
+// Layout state
+const layoutConfig = ref({
+  menuMode: 'static', // static, overlay, slim, horizontal, slim-plus
+  menuTheme: 'light', // light, dark
+  colorScheme: 'light', // light, dark
+  inputStyle: 'outlined', // outlined, filled
+  ripple: true
+})
 
-  const layoutState = ref({
-    staticMenuDesktopInactive: false,
-    overlayMenuActive: false,
-    staticMenuMobileActive: false,
-    menuHoverActive: false,
-    activeMenuItem: null
-  })
+const layoutState = ref({
+  staticMenuDesktopInactive: false,
+  overlayMenuActive: false,
+  staticMenuMobileActive: false,
+  menuHoverActive: false,
+  rightMenuActive: false,
+  topbarMenuActive: false,
+  activeMenuItem: null,
+  configSidebarVisible: false
+})
 
-  const isMobile = ref(false)
-  const isDesktop = ref(true)
+const isMobile = ref(false)
+const isDesktop = ref(true)
 
-  const isSidebarActive = computed(() => {
-    return layoutState.value.overlayMenuActive || layoutState.value.staticMenuMobileActive
-  })
+// Computed properties
+const isSidebarActive = computed(() => {
+  return layoutState.value.staticMenuDesktopInactive || layoutState.value.overlayMenuActive
+})
 
-  const isSidebarVisible = computed(() => {
-    return !layoutState.value.staticMenuDesktopInactive
-  })
+const isSidebarVisible = computed(() => {
+  return !layoutState.value.staticMenuDesktopInactive || layoutState.value.overlayMenuActive
+})
 
-  const changeThemeSettings = (theme: string, colorScheme: string) => {
-    layoutConfig.value.theme = theme
-    layoutConfig.value.colorScheme = colorScheme
+// Methods
+const toggleMenu = () => {
+  if (isMobile.value) {
+    layoutState.value.staticMenuMobileActive = !layoutState.value.staticMenuMobileActive
+  } else {
+    layoutState.value.staticMenuDesktopInactive = !layoutState.value.staticMenuDesktopInactive
   }
+}
 
-  const setScale = (scale: number) => {
-    document.documentElement.style.fontSize = scale + 'px'
+const toggleOverlayMenu = () => {
+  layoutState.value.overlayMenuActive = !layoutState.value.overlayMenuActive
+}
+
+const toggleConfigSidebar = () => {
+  layoutState.value.configSidebarVisible = !layoutState.value.configSidebarVisible
+}
+
+const onMenuToggle = () => {
+  if (isMobile.value) {
+    layoutState.value.staticMenuMobileActive = !layoutState.value.staticMenuMobileActive
+  } else {
+    layoutState.value.staticMenuDesktopInactive = !layoutState.value.staticMenuDesktopInactive
   }
+}
 
-  const onMenuToggle = () => {
-    if (isMobile.value) {
-      layoutState.value.staticMenuMobileActive = !layoutState.value.staticMenuMobileActive
-    } else {
-      layoutState.value.staticMenuDesktopInactive = !layoutState.value.staticMenuDesktopInactive
-    }
+const onOverlayMenuToggle = () => {
+  layoutState.value.overlayMenuActive = !layoutState.value.overlayMenuActive
+}
+
+const onMenuHover = () => {
+  if (layoutConfig.value.menuMode === 'slim' || layoutConfig.value.menuMode === 'slim-plus') {
+    layoutState.value.menuHoverActive = !layoutState.value.menuHoverActive
   }
+}
 
-  const isOverlay = () => {
-    return layoutConfig.value.menuMode === 'overlay'
+const onRightMenuToggle = () => {
+  layoutState.value.rightMenuActive = !layoutState.value.rightMenuActive
+}
+
+const onTopbarMenuToggle = () => {
+  layoutState.value.topbarMenuActive = !layoutState.value.topbarMenuActive
+}
+
+const onMenuItemClick = (event: any) => {
+  if (event.item && !event.item.items) {
+    layoutState.value.overlayMenuActive = false
+    layoutState.value.staticMenuMobileActive = false
   }
+}
 
-  const isSlim = () => {
-    return layoutConfig.value.menuMode === 'slim'
+const onConfigClick = () => {
+  layoutState.value.configSidebarVisible = !layoutState.value.configSidebarVisible
+}
+
+const onConfigButtonClick = () => {
+  layoutState.value.configSidebarVisible = !layoutState.value.configSidebarVisible
+}
+
+const onConfigClose = () => {
+  layoutState.value.configSidebarVisible = false
+}
+
+const changeTheme = (theme: string) => {
+  layoutConfig.value.colorScheme = theme
+  layoutConfig.value.menuTheme = theme
+}
+
+const changeMenuMode = (mode: string) => {
+  layoutConfig.value.menuMode = mode
+}
+
+const changeInputStyle = (style: string) => {
+  layoutConfig.value.inputStyle = style
+}
+
+const toggleRipple = () => {
+  layoutConfig.value.ripple = !layoutConfig.value.ripple
+}
+
+// Responsive handling
+const checkScreenSize = () => {
+  if (process.client) {
+    const width = window.innerWidth
+    isMobile.value = width < 992
+    isDesktop.value = width >= 992
   }
+}
 
-  const isHorizontal = () => {
-    return layoutConfig.value.menuMode === 'horizontal'
-  }
+// Initialize responsive handling
+if (process.client) {
+  checkScreenSize()
+  window.addEventListener('resize', checkScreenSize)
+}
 
-  const isSlimPlus = () => {
-    return layoutConfig.value.menuMode === 'slim-plus'
-  }
-
-  const isStatic = () => {
-    return layoutConfig.value.menuMode === 'static'
-  }
-
+export function useLayout() {
   return {
     layoutConfig,
     layoutState,
-    isSidebarActive,
-    isSidebarVisible,
     isMobile,
     isDesktop,
-    changeThemeSettings,
-    setScale,
+    isSidebarActive,
+    isSidebarVisible,
+    toggleMenu,
+    toggleOverlayMenu,
+    toggleConfigSidebar,
     onMenuToggle,
-    isOverlay,
-    isSlim,
-    isHorizontal,
-    isSlimPlus,
-    isStatic
+    onOverlayMenuToggle,
+    onMenuHover,
+    onRightMenuToggle,
+    onTopbarMenuToggle,
+    onMenuItemClick,
+    onConfigClick,
+    onConfigButtonClick,
+    onConfigClose,
+    changeTheme,
+    changeMenuMode,
+    changeInputStyle,
+    toggleRipple
   }
 }

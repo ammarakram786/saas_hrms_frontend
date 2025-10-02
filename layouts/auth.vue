@@ -1,5 +1,5 @@
 <template>
-  <div class="auth-layout">
+  <div >
     <slot />
   </div>
 </template>
@@ -9,12 +9,5 @@
 </script>
 
 <style scoped>
-.auth-layout {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
+
 </style>

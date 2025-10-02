@@ -5,8 +5,8 @@
     </NuxtLayout>
     
     <!-- Global components -->
-    <PToast />
-    <PConfirmDialog />
+    <Toast />
+    <ConfirmDialog />
   </div>
 </template>
 

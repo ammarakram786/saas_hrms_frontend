@@ -13,13 +13,13 @@
             Manage employees, track attendance, process payroll, and more with ease.
           </p>
           <div class="hero-actions">
-            <PButton 
+            <Button 
               label="Get Started" 
               icon="pi pi-arrow-right" 
               size="large"
               @click="navigateTo('/login')"
             />
-            <PButton 
+            <Button 
               label="Learn More" 
               icon="pi pi-play" 
               class="p-button-outlined"
@@ -163,13 +163,13 @@
             Join thousands of companies already using our HRMS solution
           </p>
           <div class="cta-actions">
-            <PButton 
+            <Button 
               label="Start Free Trial" 
               icon="pi pi-rocket" 
               size="large"
               @click="navigateTo('/login')"
             />
-            <PButton 
+            <Button 
               label="Contact Sales" 
               icon="pi pi-phone" 
               class="p-button-outlined"
@@ -236,9 +236,9 @@
               © 2024 HRMS. All rights reserved.
             </p>
             <div class="footer-social">
-              <PButton icon="pi pi-twitter" class="p-button-text p-button-sm" />
-              <PButton icon="pi pi-linkedin" class="p-button-text p-button-sm" />
-              <PButton icon="pi pi-github" class="p-button-text p-button-sm" />
+              <Button icon="pi pi-twitter" class="p-button-text p-button-sm" />
+              <Button icon="pi pi-linkedin" class="p-button-text p-button-sm" />
+              <Button icon="pi pi-github" class="p-button-text p-button-sm" />
             </div>
           </div>
         </div>
@@ -289,17 +289,11 @@ const scrollToFeatures = () => {
 
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    let redirectPath = '/dashboard'
-    
-    if (authStore.isSuperUser) {
-      redirectPath = '/dashboard'
-    } else if (authStore.hasRole('tenant_admin') || authStore.user?.is_staff) {
-      redirectPath = '/tenant/dashboard'
-    } else {
-      redirectPath = '/employee/dashboard'
-    }
-    
-    navigateTo(redirectPath)
+    // Redirect authenticated users to dashboard
+    navigateTo('/dashboard')
+  } else {
+    // Redirect unauthenticated users to login
+    navigateTo('/auth/login')
   }
 })
 </script>

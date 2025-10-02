@@ -1,57 +1,144 @@
 <template>
   <div class="layout-sidebar">
-    <div class="layout-sidebar-header">
-      <NuxtLink to="/dashboard" class="layout-sidebar-logo">
-        <img src="/images/logo-dark.svg" alt="logo" height="32" />
-        <span>HRMS</span>
-      </NuxtLink>
+    <!-- Logo -->
+    <div class="layout-logo">
+      <div class="flex items-center space-x-3 p-4">
+        <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+          <i class="pi pi-users text-white text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-gray-900 dark:text-white">HRMS</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Human Resources</p>
+        </div>
+      </div>
     </div>
 
-    <div class="layout-sidebar-content">
-      <PMenu :model="menuItems" />
+    <!-- Navigation Menu -->
+    <div class="layout-menu">
+      <PMenu :model="menuItems" class="layout-menu-container">
+        <template #item="{ item, props }">
+          <NuxtLink 
+            v-if="item.route" 
+            :to="item.route" 
+            v-slot="{ isActive }"
+          >
+            <a 
+              :href="item.route" 
+              v-bind="props.action" 
+              :class="[
+                'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+                isActive 
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' 
+                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+              ]"
+            >
+              <i :class="[item.icon, 'text-lg']"></i>
+              <span>{{ item.label }}</span>
+              <PBadge 
+                v-if="item.badge" 
+                :value="item.badge" 
+                severity="danger"
+                class="ml-auto"
+              />
+            </a>
+          </NuxtLink>
+          <a 
+            v-else 
+            v-bind="props.action" 
+            :class="[
+              'flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors',
+              'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+            ]"
+          >
+            <i :class="[item.icon, 'text-lg']"></i>
+            <span>{{ item.label }}</span>
+            <i 
+              :class="[
+                'pi pi-chevron-down ml-auto transition-transform',
+                item.expanded ? 'rotate-180' : ''
+              ]"
+            ></i>
+          </a>
+        </template>
+      </PMenu>
+    </div>
+
+    <!-- User Profile -->
+    <div class="layout-user-profile">
+      <div class="flex items-center space-x-3 p-4 border-t border-gray-200 dark:border-gray-700">
+        <PAvatar 
+          :label="authStore.userInitials" 
+          size="large"
+          class="bg-blue-100 text-blue-600"
+        />
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+            {{ authStore.userFullName }}
+          </p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+            {{ authStore.user?.email }}
+          </p>
+        </div>
+        <PDropdown 
+          :model="userMenuItems" 
+          :popup="true"
+          placement="top-end"
+        >
+          <template #trigger>
+            <Button 
+              icon="pi pi-ellipsis-v" 
+              text
+              size="small"
+              class="p-1"
+            />
+          </template>
+        </PDropdown>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
-const props = defineProps<{
-  visible: boolean
-}>()
+// Props
+interface Props {
+  visible?: boolean
+}
 
+defineProps<Props>()
+
+// Stores
 const authStore = useAuthStore()
 
+// Menu items
 const menuItems = computed(() => [
   {
     label: 'Dashboard',
     icon: 'pi pi-home',
-    to: '/dashboard'
+    route: '/dashboard'
   },
   {
-    label: 'Employee Management',
+    label: 'Employees',
     icon: 'pi pi-users',
     items: [
       {
-        label: 'Employees',
-        icon: 'pi pi-users',
-        to: '/employees',
-        visible: authStore.hasPermission('employee.view')
+        label: 'All Employees',
+        icon: 'pi pi-list',
+        route: '/employees'
+      },
+      {
+        label: 'Add Employee',
+        icon: 'pi pi-user-plus',
+        route: '/employees/create'
       },
       {
         label: 'Departments',
         icon: 'pi pi-building',
-        to: '/departments',
-        visible: authStore.hasPermission('department.view')
-      },
-      {
-        label: 'Organization Chart',
-        icon: 'pi pi-sitemap',
-        to: '/organization',
-        visible: authStore.hasPermission('employee.view')
+        route: '/employees/departments'
       }
-    ],
-    visible: authStore.hasPermission('employee.view')
+    ]
   },
   {
     label: 'Attendance',
@@ -59,251 +146,220 @@ const menuItems = computed(() => [
     items: [
       {
         label: 'Attendance Records',
-        icon: 'pi pi-clock',
-        to: '/attendance',
-        visible: authStore.hasPermission('attendance.view')
+        icon: 'pi pi-calendar',
+        route: '/attendance'
       },
       {
         label: 'Clock In/Out',
         icon: 'pi pi-play',
-        to: '/attendance/clock',
-        visible: authStore.hasPermission('attendance.clock')
+        route: '/attendance/clock'
       },
       {
-        label: 'Attendance Reports',
-        icon: 'pi pi-chart-bar',
-        to: '/attendance/reports',
-        visible: authStore.hasPermission('attendance.view')
+        label: 'Shifts',
+        icon: 'pi pi-calendar-times',
+        route: '/attendance/shifts'
       }
-    ],
-    visible: authStore.hasPermission('attendance.view')
+    ]
   },
   {
     label: 'Leave Management',
-    icon: 'pi pi-calendar',
+    icon: 'pi pi-calendar-times',
     items: [
       {
         label: 'Leave Requests',
-        icon: 'pi pi-calendar-plus',
-        to: '/leave/requests',
-        visible: authStore.hasPermission('leave.view')
+        icon: 'pi pi-list',
+        route: '/leave',
+        badge: authStore.hasPermission('leave.view_leave_request') ? '3' : undefined
       },
       {
-        label: 'Leave Balance',
-        icon: 'pi pi-calendar-minus',
-        to: '/leave/balance',
-        visible: authStore.hasPermission('leave.view')
+        label: 'Request Leave',
+        icon: 'pi pi-plus',
+        route: '/leave/request'
       },
       {
         label: 'Leave Types',
         icon: 'pi pi-cog',
-        to: '/leave/types',
-        visible: authStore.hasPermission('leave.manage')
+        route: '/leave/types'
+      },
+      {
+        label: 'Leave Balances',
+        icon: 'pi pi-wallet',
+        route: '/leave/balances'
+      },
+      {
+        label: 'Holidays',
+        icon: 'pi pi-star',
+        route: '/leave/holidays'
       }
-    ],
-    visible: authStore.hasPermission('leave.view')
+    ]
   },
   {
     label: 'Payroll',
-    icon: 'pi pi-wallet',
+    icon: 'pi pi-dollar',
     items: [
       {
         label: 'Payroll Records',
-        icon: 'pi pi-wallet',
-        to: '/payroll',
-        visible: authStore.hasPermission('payroll.view')
+        icon: 'pi pi-list',
+        route: '/payroll'
       },
       {
         label: 'Payroll Periods',
         icon: 'pi pi-calendar',
-        to: '/payroll/periods',
-        visible: authStore.hasPermission('payroll.manage')
+        route: '/payroll/periods'
       },
       {
-        label: 'Payslips',
-        icon: 'pi pi-file-pdf',
-        to: '/payroll/payslips',
-        visible: authStore.hasPermission('payroll.view')
+        label: 'Payroll Components',
+        icon: 'pi pi-cog',
+        route: '/payroll/components'
       }
-    ],
-    visible: authStore.hasPermission('payroll.view')
+    ]
   },
   {
     label: 'User Management',
-    icon: 'pi pi-user-plus',
+    icon: 'pi pi-user-cog',
     items: [
       {
         label: 'Users',
         icon: 'pi pi-users',
-        to: '/users',
-        visible: authStore.hasPermission('user.view')
+        route: '/users'
       },
       {
         label: 'Roles',
         icon: 'pi pi-shield',
-        to: '/users/roles',
-        visible: authStore.hasPermission('role.view')
+        route: '/users/roles'
       },
       {
         label: 'Invitations',
         icon: 'pi pi-envelope',
-        to: '/users/invitations',
-        visible: authStore.hasPermission('invitation.view')
+        route: '/users/invitations'
       }
-    ],
-    visible: authStore.hasPermission('user.view')
+    ]
   },
   {
-    label: 'Reports & Analytics',
-    icon: 'pi pi-chart-line',
+    label: 'Reports',
+    icon: 'pi pi-chart-bar',
     items: [
-      {
-        label: 'Dashboard Analytics',
-        icon: 'pi pi-chart-pie',
-        to: '/reports/analytics',
-        visible: authStore.hasPermission('report.view')
-      },
-      {
-        label: 'Employee Reports',
-        icon: 'pi pi-users',
-        to: '/reports/employees',
-        visible: authStore.hasPermission('report.view')
-      },
       {
         label: 'Attendance Reports',
         icon: 'pi pi-clock',
-        to: '/reports/attendance',
-        visible: authStore.hasPermission('report.view')
+        route: '/reports/attendance'
+      },
+      {
+        label: 'Leave Reports',
+        icon: 'pi pi-calendar-times',
+        route: '/reports/leave'
       },
       {
         label: 'Payroll Reports',
-        icon: 'pi pi-wallet',
-        to: '/reports/payroll',
-        visible: authStore.hasPermission('report.view')
+        icon: 'pi pi-dollar',
+        route: '/reports/payroll'
       }
-    ],
-    visible: authStore.hasPermission('report.view')
+    ]
   },
   {
-    label: 'Audit & Logs',
+    label: 'Audit Logs',
     icon: 'pi pi-history',
-    to: '/audit',
-    visible: authStore.hasPermission('audit.view')
+    route: '/audit'
   },
   {
     label: 'Settings',
     icon: 'pi pi-cog',
-    items: [
-      {
-        label: 'System Settings',
-        icon: 'pi pi-cog',
-        to: '/settings/system',
-        visible: authStore.hasPermission('settings.view')
-      },
-      {
-        label: 'Company Settings',
-        icon: 'pi pi-building',
-        to: '/settings/company',
-        visible: authStore.hasPermission('settings.view')
-      },
-      {
-        label: 'Holiday Calendar',
-        icon: 'pi pi-calendar',
-        to: '/settings/holidays',
-        visible: authStore.hasPermission('settings.view')
-      }
-    ],
-    visible: authStore.hasPermission('settings.view')
+    route: '/settings'
   }
-].filter(item => item.visible !== false))
+])
+
+const userMenuItems = computed(() => [
+  {
+    label: 'Profile',
+    icon: 'pi pi-user',
+    command: () => navigateTo('/profile')
+  },
+  {
+    label: 'Settings',
+    icon: 'pi pi-cog',
+    command: () => navigateTo('/settings')
+  },
+  {
+    separator: true
+  },
+  {
+    label: 'Logout',
+    icon: 'pi pi-sign-out',
+    command: () => authStore.logout()
+  }
+])
 </script>
 
 <style scoped>
 .layout-sidebar {
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(180deg, var(--surface-card) 0%, var(--surface-50) 100%);
+  border-right: 1px solid var(--surface-border);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
-.layout-sidebar-header {
-  padding: 1.5rem 1rem;
+.layout-logo {
   border-bottom: 1px solid var(--surface-border);
 }
 
-.layout-sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  color: var(--text-color);
-  font-weight: 600;
-  font-size: 1.25rem;
-}
-
-.layout-sidebar-content {
+.layout-menu {
   flex: 1;
-  padding: 1rem 0;
   overflow-y: auto;
+  padding: 1rem 0;
 }
 
-:deep(.p-menu) {
+.layout-menu-container {
   border: none;
   background: transparent;
-  width: 100%;
 }
 
-:deep(.p-menu .p-menuitem-link) {
-  padding: 0.75rem 1rem;
-  border-radius: 0;
-  color: var(--text-color);
-  transition: all 0.2s;
+.layout-user-profile {
+  border-top: 1px solid var(--surface-border);
+  margin-top: auto;
 }
 
-:deep(.p-menu .p-menuitem-link:hover) {
-  background-color: var(--surface-hover);
-  color: var(--text-color);
+/* Custom scrollbar */
+.layout-menu::-webkit-scrollbar {
+  width: 4px;
 }
 
-:deep(.p-menu .p-menuitem-link.router-link-active) {
-  background-color: var(--primary-color);
-  color: var(--primary-color-text);
-}
-
-:deep(.p-menu .p-submenu-header) {
-  padding: 0.75rem 1rem;
-  font-weight: 600;
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-:deep(.p-menu .p-submenu-list) {
-  padding: 0;
+.layout-menu::-webkit-scrollbar-track {
   background: transparent;
 }
 
-:deep(.p-menu .p-submenu-list .p-menuitem-link) {
-  padding-left: 2.5rem;
-  font-size: 0.875rem;
+.layout-menu::-webkit-scrollbar-thumb {
+  background: var(--surface-300);
+  border-radius: 2px;
 }
 
-:deep(.p-menu .p-menuitem-icon) {
-  margin-right: 0.5rem;
-  width: 1rem;
-  text-align: center;
+.layout-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-400);
 }
 
-:deep(.p-menu .p-menuitem-text) {
-  flex: 1;
+/* Menu item hover effects */
+.layout-menu-container :deep(.p-menuitem-link) {
+  border-radius: 0.5rem;
+  margin: 0 0.5rem;
 }
 
-:deep(.p-menu .p-submenu-icon) {
-  margin-left: auto;
-  transition: transform 0.2s;
+.layout-menu-container :deep(.p-menuitem-link:hover) {
+  background-color: var(--surface-100);
 }
 
-:deep(.p-menu .p-submenu-expanded .p-submenu-icon) {
-  transform: rotate(90deg);
+.layout-menu-container :deep(.p-menuitem-link.p-menuitem-link-active) {
+  background-color: var(--blue-100);
+  color: var(--blue-700);
+}
+
+/* Dark mode adjustments */
+.dark .layout-menu-container :deep(.p-menuitem-link:hover) {
+  background-color: var(--surface-800);
+}
+
+.dark .layout-menu-container :deep(.p-menuitem-link.p-menuitem-link-active) {
+  background-color: var(--blue-900);
+  color: var(--blue-300);
 }
 </style>

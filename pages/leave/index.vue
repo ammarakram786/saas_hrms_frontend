@@ -1,462 +1,348 @@
 <template>
-  <div class="grid">
+  <div class="leave-page">
     <!-- Page Header -->
-    <div class="col-12">
-      <div class="card">
-        <div class="flex justify-content-between align-items-center">
-          <div>
-            <h1 class="text-3xl font-bold text-900 m-0">Leave Management</h1>
-            <p class="text-600 mt-2 mb-0">Manage employee leave requests and approvals</p>
-          </div>
-          <div class="flex align-items-center gap-3">
-            <PButton 
-              label="Leave Calendar" 
-              icon="pi pi-calendar" 
-              class="p-button-outlined"
-              @click="showCalendar = true"
-            />
-            <PButton 
-              label="Request Leave" 
-              icon="pi pi-plus" 
-              @click="showRequestDialog = true"
-            />
-          </div>
+    <div class="page-header mb-6">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Leave Management</h1>
+          <p class="text-gray-600 dark:text-gray-400 mt-1">Manage employee leave requests and balances</p>
+        </div>
+        <div class="flex gap-3">
+          <Button 
+            icon="pi pi-calendar-plus" 
+            label="Request Leave" 
+            @click="showRequestDialog = true"
+          />
+          <Button 
+            icon="pi pi-cog" 
+            label="Manage Leave Types" 
+            severity="secondary"
+            @click="navigateTo('/leave/types')"
+          />
         </div>
       </div>
     </div>
 
     <!-- Quick Stats -->
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Pending Requests</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.pendingRequests }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-clock text-orange-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Approved This Month</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.approvedThisMonth }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-green-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-check-circle text-green-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">On Leave Today</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.onLeaveToday }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-calendar-minus text-blue-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <div class="col-12 md:col-3">
-      <PCard class="stat-card">
-        <template #content>
-          <div class="flex align-items-center justify-content-between">
-            <div>
-              <span class="block text-500 font-medium mb-3">Leave Balance</span>
-              <div class="text-900 font-bold text-4xl m-0">{{ stats.leaveBalance }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-purple-100 border-round" style="width: 2.5rem; height: 2.5rem;">
-              <i class="pi pi-wallet text-purple-500 text-xl"></i>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Leave Balance Overview -->
-    <div class="col-12 lg:col-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <PCard>
-        <template #title>My Leave Balance</template>
         <template #content>
-          <div class="space-y-4">
-            <div v-for="balance in leaveBalances" :key="balance.type" class="flex justify-content-between align-items-center">
-              <div>
-                <div class="font-medium">{{ balance.type }}</div>
-                <div class="text-sm text-500">{{ balance.description }}</div>
-              </div>
-              <div class="text-right">
-                <div class="font-bold text-lg">{{ balance.available }}/{{ balance.total }}</div>
-                <div class="text-sm text-500">days</div>
-              </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Requests</p>
+              <p class="text-3xl font-bold text-orange-600">{{ stats.pending_requests || 0 }}</p>
             </div>
+            <i class="pi pi-clock text-3xl text-orange-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Approved This Month</p>
+              <p class="text-3xl font-bold text-green-600">{{ stats.approved_this_month || 0 }}</p>
+            </div>
+            <i class="pi pi-check-circle text-3xl text-green-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Leave Days</p>
+              <p class="text-3xl font-bold text-blue-600">{{ stats.total_leave_days || 0 }}</p>
+            </div>
+            <i class="pi pi-calendar text-3xl text-blue-500"></i>
+          </div>
+        </template>
+      </PCard>
+
+      <PCard>
+        <template #content>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Leave Balance</p>
+              <p class="text-3xl font-bold text-purple-600">{{ stats.leave_balance || 0 }}</p>
+            </div>
+            <i class="pi pi-wallet text-3xl text-purple-500"></i>
           </div>
         </template>
       </PCard>
     </div>
 
-    <!-- Recent Requests -->
-    <div class="col-12 lg:col-6">
-      <PCard>
-        <template #title>
-          <div class="flex justify-content-between align-items-center">
-            <span>Recent Requests</span>
-            <PButton 
-              label="View All" 
-              icon="pi pi-arrow-right" 
-              class="p-button-text p-button-sm"
-              @click="navigateTo('/leave/requests')"
-            />
-          </div>
-        </template>
-        <template #content>
-          <div class="space-y-3">
-            <div v-for="request in recentRequests" :key="request.id" class="flex justify-content-between align-items-center p-3 border-round" :class="getRequestClass(request.status)">
-              <div>
-                <div class="font-medium">{{ request.leave_type }}</div>
-                <div class="text-sm text-500">{{ formatDate(request.start_date) }} - {{ formatDate(request.end_date) }}</div>
-              </div>
-              <PTag :value="request.status" :severity="getStatusSeverity(request.status)" />
+    <!-- Filters and Search -->
+    <PCard class="mb-6">
+      <template #content>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="md:col-span-2">
+            <div class="p-input-icon-left">
+              <i class="pi pi-search" />
+              <PInputText 
+                v-model="filters.search" 
+                placeholder="Search leave requests..."
+                class="w-full"
+                @input="onSearch"
+              />
             </div>
           </div>
-        </template>
-      </PCard>
-    </div>
-
-    <!-- Filters -->
-    <div class="col-12">
-      <PCard>
-        <template #title>Filters</template>
-        <template #content>
-          <div class="grid">
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="status" class="font-medium">Status</label>
-                <PDropdown 
-                  id="status"
-                  v-model="filters.status" 
-                  :options="statusOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Statuses"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="leaveType" class="font-medium">Leave Type</label>
-                <PDropdown 
-                  id="leaveType"
-                  v-model="filters.leaveType" 
-                  :options="leaveTypeOptions" 
-                  optionLabel="label" 
-                  optionValue="value"
-                  placeholder="All Types"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="dateFrom" class="font-medium">From Date</label>
-                <PCalendar 
-                  id="dateFrom"
-                  v-model="filters.dateFrom" 
-                  dateFormat="yy-mm-dd"
-                  placeholder="Select Date"
-                  class="w-full"
-                />
-              </div>
-            </div>
-            <div class="col-12 md:col-3">
-              <div class="field">
-                <label for="dateTo" class="font-medium">To Date</label>
-                <PCalendar 
-                  id="dateTo"
-                  v-model="filters.dateTo" 
-                  dateFormat="yy-mm-dd"
-                  placeholder="Select Date"
-                  class="w-full"
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-      </PCard>
-    </div>
+          <PDropdown 
+            v-model="filters.status" 
+            :options="statusOptions" 
+            option-label="label"
+            option-value="value"
+            placeholder="All Status"
+            @change="loadLeaveRequests"
+          />
+          <PDropdown 
+            v-model="filters.leave_type" 
+            :options="leaveTypeOptions" 
+            option-label="name"
+            option-value="id"
+            placeholder="All Leave Types"
+            @change="loadLeaveRequests"
+          />
+          <PDropdown 
+            v-model="filters.employee" 
+            :options="employeeOptions" 
+            option-label="full_name"
+            option-value="id"
+            placeholder="All Employees"
+            @change="loadLeaveRequests"
+          />
+        </div>
+      </template>
+    </PCard>
 
     <!-- Leave Requests Table -->
-    <div class="col-12">
-      <PCard>
-        <template #title>
-          <div class="flex justify-content-between align-items-center">
-            <span>Leave Requests</span>
-            <div class="flex align-items-center gap-2">
-              <PButton 
-                icon="pi pi-refresh" 
-                class="p-button-outlined p-button-sm"
-                @click="refreshData"
-                :loading="loading"
-              />
-              <PDropdown 
-                v-model="selectedView" 
-                :options="viewOptions" 
-                optionLabel="label" 
-                optionValue="value"
-                class="w-8rem"
-              />
-            </div>
+    <PCard>
+      <template #title>
+        <div class="flex justify-between items-center">
+          <span>Leave Requests ({{ totalRecords }})</span>
+          <div class="flex gap-2">
+            <Button 
+              icon="pi pi-refresh" 
+              @click="loadLeaveRequests"
+              :loading="isLoading"
+              text
+              size="small"
+            />
+            <Button 
+              icon="pi pi-download" 
+              @click="exportLeaveRequests"
+              text
+              size="small"
+            />
           </div>
-        </template>
-        <template #content>
-          <PDataTable 
-            :value="leaveRequests" 
-            :paginator="true" 
-            :rows="20"
-            :filters="filters"
-            filterDisplay="row"
-            :loading="loading"
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-            :rowsPerPageOptions="[10, 20, 50, 100]"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
-            :globalFilterFields="['employee.full_name', 'leave_type', 'reason']"
-            responsiveLayout="scroll"
-            :scrollable="true"
-            scrollHeight="600px"
-          >
-            <template #empty>
-              <div class="text-center py-4">
-                <i class="pi pi-calendar text-4xl text-400 mb-3"></i>
-                <p class="text-600">No leave requests found</p>
-              </div>
-            </template>
-            
-            <PColumn field="employee.full_name" header="Employee" sortable style="min-width: 200px">
-              <template #body="{ data }">
-                <div class="flex align-items-center gap-2">
-                  <PAvatar 
-                    :label="data.employee.full_name.split(' ').map(n => n[0]).join('')" 
-                    shape="circle" 
-                    size="normal"
-                    class="bg-primary-100 text-primary-700"
-                  />
-                  <div>
-                    <div class="font-medium">{{ data.employee.full_name }}</div>
-                    <div class="text-sm text-500">{{ data.employee.employee_id }}</div>
+        </div>
+      </template>
+      <template #content>
+        <PDataTable 
+          :value="leaveRequests" 
+          :loading="isLoading"
+          :paginator="true"
+          :rows="pagination.rows"
+          :total-records="totalRecords"
+          :lazy="true"
+          @page="onPageChange"
+          @sort="onSort"
+          :sort-field="pagination.sortField"
+          :sort-order="pagination.sortOrder"
+          :rows-per-page-options="[10, 25, 50]"
+          paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+          current-page-report-template="Showing {first} to {last} of {totalRecords} requests"
+        >
+          <template #empty>
+            <div class="text-center py-8">
+              <i class="pi pi-calendar-times text-4xl text-gray-400 mb-2"></i>
+              <p class="text-gray-500 dark:text-gray-400">No leave requests found</p>
+            </div>
+          </template>
+
+          <PColumn field="employee_name" header="Employee" :sortable="true">
+            <template #body="{ data }">
+              <div class="flex items-center space-x-3">
+                <PAvatar 
+                  :label="data.employee_name?.charAt(0) || 'E'" 
+                  size="small"
+                  :class="getStatusColor(data.status)"
+                />
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">
+                    {{ data.employee_name }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ data.leave_type_name }}
                   </div>
                 </div>
-              </template>
-            </PColumn>
-            
-            <PColumn field="leave_type" header="Leave Type" sortable style="min-width: 150px">
-              <template #body="{ data }">
-                <PTag :value="data.leave_type" severity="info" />
-              </template>
-            </PColumn>
-            
-            <PColumn field="start_date" header="Start Date" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span>{{ formatDate(data.start_date) }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="end_date" header="End Date" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <span>{{ formatDate(data.end_date) }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="days" header="Days" sortable style="min-width: 100px">
-              <template #body="{ data }">
-                <span>{{ data.days }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn field="status" header="Status" sortable style="min-width: 120px">
-              <template #body="{ data }">
-                <PTag :value="data.status" :severity="getStatusSeverity(data.status)" />
-              </template>
-            </PColumn>
-            
-            <PColumn field="reason" header="Reason" sortable style="min-width: 200px">
-              <template #body="{ data }">
-                <span class="text-ellipsis">{{ data.reason || '-' }}</span>
-              </template>
-            </PColumn>
-            
-            <PColumn header="Actions" style="min-width: 150px">
-              <template #body="{ data }">
-                <div class="flex gap-2">
-                  <PButton 
-                    icon="pi pi-eye" 
-                    class="p-button-text p-button-sm"
-                    v-tooltip.top="'View Details'"
-                    @click="viewRequest(data)" 
-                  />
-                  <PButton 
-                    v-if="data.status === 'pending'"
-                    icon="pi pi-check" 
-                    class="p-button-text p-button-sm p-button-success"
-                    v-tooltip.top="'Approve'"
-                    @click="approveRequest(data)" 
-                  />
-                  <PButton 
-                    v-if="data.status === 'pending'"
-                    icon="pi pi-times" 
-                    class="p-button-text p-button-sm p-button-danger"
-                    v-tooltip.top="'Reject'"
-                    @click="rejectRequest(data)" 
-                  />
-                </div>
-              </template>
-            </PColumn>
-          </PDataTable>
-        </template>
-      </PCard>
-    </div>
+              </div>
+            </template>
+          </PColumn>
 
-    <!-- Request Leave Dialog -->
+          <PColumn field="start_date" header="Start Date" :sortable="true">
+            <template #body="{ data }">
+              <div>
+                <div class="font-medium">{{ formatDate(data.start_date) }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ getDayOfWeek(data.start_date) }}
+                </div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="end_date" header="End Date" :sortable="true">
+            <template #body="{ data }">
+              <div>
+                <div class="font-medium">{{ formatDate(data.end_date) }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ getDayOfWeek(data.end_date) }}
+                </div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="days_requested" header="Days" :sortable="true">
+            <template #body="{ data }">
+              <div class="text-center">
+                <div class="text-lg font-bold text-blue-600">{{ data.days_requested }}</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">days</div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="status" header="Status" :sortable="true">
+            <template #body="{ data }">
+              <PTag 
+                :value="formatStatus(data.status)" 
+                :severity="getStatusSeverity(data.status)"
+              />
+            </template>
+          </PColumn>
+
+          <PColumn field="reason" header="Reason">
+            <template #body="{ data }">
+              <div class="max-w-xs">
+                <p class="truncate" :title="data.reason">{{ data.reason }}</p>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn field="created_at" header="Requested" :sortable="true">
+            <template #body="{ data }">
+              <div>
+                <div class="text-sm">{{ formatDate(data.created_at) }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ getTimeAgo(data.created_at) }}
+                </div>
+              </div>
+            </template>
+          </PColumn>
+
+          <PColumn header="Actions" :exportable="false" style="min-width: 10rem">
+            <template #body="{ data }">
+              <div class="flex gap-2">
+                <Button 
+                  icon="pi pi-eye" 
+                  size="small"
+                  text
+                  @click="viewLeaveRequest(data)"
+                  v-tooltip.top="'View Details'"
+                />
+                <Button 
+                  v-if="data.status === 'pending'"
+                  icon="pi pi-check" 
+                  size="small"
+                  text
+                  severity="success"
+                  @click="approveLeaveRequest(data)"
+                  v-tooltip.top="'Approve'"
+                />
+                <Button 
+                  v-if="data.status === 'pending'"
+                  icon="pi pi-times" 
+                  size="small"
+                  text
+                  severity="danger"
+                  @click="rejectLeaveRequest(data)"
+                  v-tooltip.top="'Reject'"
+                />
+                <Button 
+                  icon="pi pi-pencil" 
+                  size="small"
+                  text
+                  @click="editLeaveRequest(data)"
+                  v-tooltip.top="'Edit'"
+                />
+              </div>
+            </template>
+          </PColumn>
+        </PDataTable>
+      </template>
+    </PCard>
+
+    <!-- Leave Request Dialog -->
     <PDialog 
       v-model:visible="showRequestDialog" 
-      header="Request Leave" 
-      :style="{ width: '600px' }"
+      :header="editingRequest ? 'Edit Leave Request' : 'Request Leave'"
       :modal="true"
-      class="p-fluid"
+      :style="{ width: '50rem' }"
+      :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
     >
-      <div class="grid">
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="leaveType" class="font-medium">Leave Type *</label>
-            <PDropdown 
-              id="leaveType"
-              v-model="requestForm.leave_type" 
-              :options="leaveTypeOptions" 
-              optionLabel="label" 
-              optionValue="value"
-              placeholder="Select Leave Type"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="days" class="font-medium">Days *</label>
-            <PInputNumber 
-              id="days"
-              v-model="requestForm.days" 
-              :min="1"
-              :max="30"
-              placeholder="Number of days"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="startDate" class="font-medium">Start Date *</label>
-            <PCalendar 
-              id="startDate"
-              v-model="requestForm.start_date" 
-              dateFormat="yy-mm-dd"
-              placeholder="Select Start Date"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12 md:col-6">
-          <div class="field">
-            <label for="endDate" class="font-medium">End Date *</label>
-            <PCalendar 
-              id="endDate"
-              v-model="requestForm.end_date" 
-              dateFormat="yy-mm-dd"
-              placeholder="Select End Date"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="field">
-            <label for="reason" class="font-medium">Reason *</label>
-            <PTextarea 
-              id="reason"
-              v-model="requestForm.reason" 
-              placeholder="Please provide a reason for your leave request"
-              rows="4"
-              class="w-full"
-            />
-          </div>
-        </div>
-        <div class="col-12">
-          <div class="field">
-            <label for="emergencyContact" class="font-medium">Emergency Contact</label>
-            <PInputText 
-              id="emergencyContact"
-              v-model="requestForm.emergency_contact" 
-              placeholder="Emergency contact information"
-              class="w-full"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <template #footer>
-        <PButton 
-          label="Cancel" 
-          icon="pi pi-times" 
-          class="p-button-text" 
-          @click="closeRequestDialog" 
-        />
-        <PButton 
-          label="Submit Request" 
-          icon="pi pi-check" 
-          @click="submitRequest" 
-        />
-      </template>
+      <LeaveRequestForm 
+        :request="editingRequest"
+        @close="showRequestDialog = false"
+        @save="onLeaveRequestSave"
+      />
     </PDialog>
 
-    <!-- Leave Calendar Dialog -->
+    <!-- Leave Request Details Dialog -->
     <PDialog 
-      v-model:visible="showCalendar" 
-      header="Leave Calendar" 
-      :style="{ width: '800px' }"
+      v-model:visible="showDetailsDialog" 
+      :header="selectedRequest?.employee_name + ' - Leave Request'"
       :modal="true"
+      :style="{ width: '50rem' }"
     >
-      <div class="text-center">
-        <PCalendar 
-          v-model="selectedDate" 
-          :inline="true"
-          :showWeek="true"
-          :showOtherMonths="true"
-          :selectOtherMonths="true"
+      <LeaveRequestDetails 
+        v-if="selectedRequest" 
+        :request="selectedRequest"
+        @close="showDetailsDialog = false"
+        @edit="editLeaveRequest"
+        @approve="approveLeaveRequest"
+        @reject="rejectLeaveRequest"
+      />
+    </PDialog>
+
+    <!-- Approve/Reject Dialog -->
+    <PDialog 
+      v-model:visible="showActionDialog" 
+      :header="actionType === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request'"
+      :modal="true"
+      :style="{ width: '30rem' }"
+    >
+      <div class="space-y-4">
+        <FormField
+          v-model="actionReason"
+          label="Reason"
+          type="textarea"
+          :error="actionErrors.reason"
         />
+        <div class="flex justify-end gap-3">
+          <Button 
+            label="Cancel" 
+            severity="secondary"
+            @click="showActionDialog = false"
+          />
+          <Button 
+            :label="actionType === 'approve' ? 'Approve' : 'Reject'"
+            :severity="actionType === 'approve' ? 'success' : 'danger'"
+            @click="confirmAction"
+            :loading="isActionLoading"
+          />
+        </div>
       </div>
-      
-      <template #footer>
-        <PButton 
-          label="Close" 
-          icon="pi pi-times" 
-          class="p-button-text" 
-          @click="showCalendar = false" 
-        />
-      </template>
     </PDialog>
   </div>
 </template>
@@ -464,336 +350,314 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useFormValidation } from '~/composables/formValidation'
+import type { LeaveRequest, PaginatedResponse } from '~/types/hrms'
 
+// Meta
 definePageMeta({
+  layout: 'default',
   middleware: 'auth'
 })
 
+// Composables
 const toast = useToast()
+const { validateForm, errors: actionErrors, clearErrors } = useFormValidation()
 
-// Reactive data
-const loading = ref(false)
+// State
+const leaveRequests = ref<LeaveRequest[]>([])
+const employees = ref<any[]>([])
+const leaveTypes = ref<any[]>([])
+const isLoading = ref(false)
+const isActionLoading = ref(false)
+const totalRecords = ref(0)
 const showRequestDialog = ref(false)
-const showCalendar = ref(false)
-const selectedView = ref('table')
-const selectedDate = ref(new Date())
+const showDetailsDialog = ref(false)
+const showActionDialog = ref(false)
+const selectedRequest = ref<LeaveRequest | null>(null)
+const editingRequest = ref<LeaveRequest | null>(null)
+const actionType = ref<'approve' | 'reject'>('approve')
+const actionReason = ref('')
+
+const stats = ref({
+  pending_requests: 0,
+  approved_this_month: 0,
+  total_leave_days: 0,
+  leave_balance: 0
+})
 
 const filters = ref({
+  search: '',
   status: null,
-  leaveType: null,
-  dateFrom: null,
-  dateTo: null
-})
-
-const requestForm = ref({
   leave_type: null,
-  days: null,
-  start_date: null,
-  end_date: null,
-  reason: '',
-  emergency_contact: ''
+  employee: null
 })
 
-// Stats
-const stats = ref({
-  pendingRequests: 8,
-  approvedThisMonth: 25,
-  onLeaveToday: 12,
-  leaveBalance: 15
+const pagination = ref({
+  first: 0,
+  rows: 25,
+  sortField: 'created_at',
+  sortOrder: -1
 })
-
-// Leave balances
-const leaveBalances = ref([
-  {
-    type: 'Annual Leave',
-    description: 'Vacation days',
-    available: 15,
-    total: 25
-  },
-  {
-    type: 'Sick Leave',
-    description: 'Medical leave',
-    available: 8,
-    total: 12
-  },
-  {
-    type: 'Personal Leave',
-    description: 'Personal matters',
-    available: 3,
-    total: 5
-  },
-  {
-    type: 'Maternity Leave',
-    description: 'Maternity leave',
-    available: 90,
-    total: 90
-  }
-])
-
-// Recent requests
-const recentRequests = ref([
-  {
-    id: 1,
-    leave_type: 'Annual Leave',
-    start_date: '2024-01-20',
-    end_date: '2024-01-25',
-    status: 'approved'
-  },
-  {
-    id: 2,
-    leave_type: 'Sick Leave',
-    start_date: '2024-01-15',
-    end_date: '2024-01-16',
-    status: 'pending'
-  },
-  {
-    id: 3,
-    leave_type: 'Personal Leave',
-    start_date: '2024-01-10',
-    end_date: '2024-01-10',
-    status: 'rejected'
-  }
-])
 
 // Options
-const statusOptions = ref([
+const statusOptions = [
   { label: 'Pending', value: 'pending' },
   { label: 'Approved', value: 'approved' },
   { label: 'Rejected', value: 'rejected' },
   { label: 'Cancelled', value: 'cancelled' }
+]
+
+const employeeOptions = computed(() => [
+  { id: null, full_name: 'All Employees' },
+  ...employees.value
 ])
 
-const leaveTypeOptions = ref([
-  { label: 'Annual Leave', value: 'annual' },
-  { label: 'Sick Leave', value: 'sick' },
-  { label: 'Personal Leave', value: 'personal' },
-  { label: 'Maternity Leave', value: 'maternity' },
-  { label: 'Paternity Leave', value: 'paternity' },
-  { label: 'Emergency Leave', value: 'emergency' }
-])
-
-const viewOptions = ref([
-  { label: 'Table View', value: 'table' },
-  { label: 'Card View', value: 'card' }
-])
-
-// Mock data
-const leaveRequests = ref([
-  {
-    id: 1,
-    employee: {
-      id: 1,
-      full_name: 'John Doe',
-      employee_id: 'EMP001'
-    },
-    leave_type: 'Annual Leave',
-    start_date: '2024-01-20',
-    end_date: '2024-01-25',
-    days: 5,
-    status: 'pending',
-    reason: 'Family vacation',
-    emergency_contact: '+1 234 567 8900',
-    created_at: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: 2,
-    employee: {
-      id: 2,
-      full_name: 'Jane Smith',
-      employee_id: 'EMP002'
-    },
-    leave_type: 'Sick Leave',
-    start_date: '2024-01-18',
-    end_date: '2024-01-19',
-    days: 2,
-    status: 'approved',
-    reason: 'Medical appointment',
-    emergency_contact: '+1 234 567 8901',
-    created_at: '2024-01-17T14:20:00Z'
-  },
-  {
-    id: 3,
-    employee: {
-      id: 3,
-      full_name: 'Mike Johnson',
-      employee_id: 'EMP003'
-    },
-    leave_type: 'Personal Leave',
-    start_date: '2024-01-22',
-    end_date: '2024-01-22',
-    days: 1,
-    status: 'rejected',
-    reason: 'Personal matters',
-    emergency_contact: '+1 234 567 8902',
-    created_at: '2024-01-21T09:15:00Z'
-  }
+const leaveTypeOptions = computed(() => [
+  { id: null, name: 'All Leave Types' },
+  ...leaveTypes.value
 ])
 
 // Methods
-const getStatusSeverity = (status: string) => {
-  switch (status) {
-    case 'approved': return 'success'
-    case 'pending': return 'warning'
-    case 'rejected': return 'danger'
-    case 'cancelled': return 'info'
-    default: return 'info'
-  }
-}
-
-const getRequestClass = (status: string) => {
-  switch (status) {
-    case 'approved': return 'bg-green-50 border-green-200'
-    case 'pending': return 'bg-orange-50 border-orange-200'
-    case 'rejected': return 'bg-red-50 border-red-200'
-    case 'cancelled': return 'bg-gray-50 border-gray-200'
-    default: return 'bg-gray-50 border-gray-200'
-  }
-}
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString()
-}
-
-const viewRequest = (request: any) => {
-  // TODO: Implement view request details
-  console.log('View request:', request)
-}
-
-const approveRequest = async (request: any) => {
+const loadLeaveRequests = async () => {
+  isLoading.value = true
   try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    request.status = 'approved'
-    toast.add({
-      severity: 'success',
-      summary: 'Request Approved',
-      detail: 'Leave request has been approved',
-      life: 3000
-    })
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Approval Failed',
-      detail: 'Failed to approve leave request',
-      life: 3000
-    })
-  }
-}
-
-const rejectRequest = async (request: any) => {
-  try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    request.status = 'rejected'
-    toast.add({
-      severity: 'success',
-      summary: 'Request Rejected',
-      detail: 'Leave request has been rejected',
-      life: 3000
-    })
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Rejection Failed',
-      detail: 'Failed to reject leave request',
-      life: 3000
-    })
-  }
-}
-
-const closeRequestDialog = () => {
-  showRequestDialog.value = false
-  resetRequestForm()
-}
-
-const resetRequestForm = () => {
-  requestForm.value = {
-    leave_type: null,
-    days: null,
-    start_date: null,
-    end_date: null,
-    reason: '',
-    emergency_contact: ''
-  }
-}
-
-const submitRequest = async () => {
-  try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    const newRequest = {
-      ...requestForm.value,
-      id: leaveRequests.value.length + 1,
-      employee: {
-        id: 1,
-        full_name: 'Current User',
-        employee_id: 'EMP001'
-      },
-      status: 'pending',
-      created_at: new Date().toISOString()
+    const params: any = {
+      page: Math.floor(pagination.value.first / pagination.value.rows) + 1,
+      per_page: pagination.value.rows,
+      ordering: pagination.value.sortOrder === 1 ? pagination.value.sortField : `-${pagination.value.sortField}`
     }
-    leaveRequests.value.unshift(newRequest)
-    closeRequestDialog()
-    toast.add({
-      severity: 'success',
-      summary: 'Request Submitted',
-      detail: 'Your leave request has been submitted for approval',
-      life: 3000
-    })
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Submission Failed',
-      detail: 'Failed to submit leave request',
-      life: 3000
-    })
-  }
-}
 
-const refreshData = async () => {
-  loading.value = true
-  try {
-    // TODO: Implement real API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    toast.add({
-      severity: 'success',
-      summary: 'Data Refreshed',
-      detail: 'Leave data has been updated',
-      life: 3000
+    if (filters.value.search) {
+      params.search = filters.value.search
+    }
+    if (filters.value.status) {
+      params.status = filters.value.status
+    }
+    if (filters.value.leave_type) {
+      params.leave_type = filters.value.leave_type
+    }
+    if (filters.value.employee) {
+      params.employee = filters.value.employee
+    }
+
+    const response = await $fetch<PaginatedResponse<LeaveRequest>>('/api/v1/attendance/leave-requests/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params
     })
+
+    leaveRequests.value = response.results
+    totalRecords.value = response.count
   } catch (error) {
+    console.error('Error loading leave requests:', error)
     toast.add({
       severity: 'error',
-      summary: 'Refresh Failed',
-      detail: 'Failed to refresh leave data',
+      summary: 'Error',
+      detail: 'Failed to load leave requests',
       life: 3000
     })
   } finally {
-    loading.value = false
+    isLoading.value = false
   }
 }
 
+const loadEmployees = async () => {
+  try {
+    const response = await $fetch<PaginatedResponse<any>>('/api/v1/employees/employees/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params: { page_size: 100, status: 'active' }
+    })
+    employees.value = response.results
+  } catch (error) {
+    console.error('Error loading employees:', error)
+  }
+}
+
+const loadLeaveTypes = async () => {
+  try {
+    const response = await $fetch<PaginatedResponse<any>>('/api/v1/attendance/leave-types/', {
+      baseURL: useRuntimeConfig().public.apiUrl,
+      params: { page_size: 100 }
+    })
+    leaveTypes.value = response.results
+  } catch (error) {
+    console.error('Error loading leave types:', error)
+  }
+}
+
+const onSearch = useDebounceFn(() => {
+  pagination.value.first = 0
+  loadLeaveRequests()
+}, 500)
+
+const onPageChange = (event: any) => {
+  pagination.value.first = event.first
+  pagination.value.rows = event.rows
+  loadLeaveRequests()
+}
+
+const onSort = (event: any) => {
+  pagination.value.sortField = event.sortField
+  pagination.value.sortOrder = event.sortOrder
+  loadLeaveRequests()
+}
+
+const viewLeaveRequest = (request: LeaveRequest) => {
+  selectedRequest.value = request
+  showDetailsDialog.value = true
+}
+
+const editLeaveRequest = (request: LeaveRequest) => {
+  editingRequest.value = request
+  showRequestDialog.value = true
+}
+
+const approveLeaveRequest = (request: LeaveRequest) => {
+  selectedRequest.value = request
+  actionType.value = 'approve'
+  actionReason.value = ''
+  showActionDialog.value = true
+}
+
+const rejectLeaveRequest = (request: LeaveRequest) => {
+  selectedRequest.value = request
+  actionType.value = 'reject'
+  actionReason.value = ''
+  showActionDialog.value = true
+}
+
+const confirmAction = async () => {
+  if (!selectedRequest.value) return
+
+  clearErrors()
+  
+  const validation = validateForm({ reason: actionReason.value }, {
+    reason: { required: actionType.value === 'reject' }
+  })
+
+  if (!validation.isValid) {
+    actionErrors.value = validation.errors
+    return
+  }
+
+  isActionLoading.value = true
+
+  try {
+    const endpoint = actionType.value === 'approve' 
+      ? `/api/v1/attendance/leave-requests/${selectedRequest.value.id}/approve/`
+      : `/api/v1/attendance/leave-requests/${selectedRequest.value.id}/reject/`
+
+    await $fetch(endpoint, {
+      method: 'POST',
+      baseURL: useRuntimeConfig().public.apiUrl,
+      body: {
+        action: actionType.value,
+        reason: actionReason.value
+      }
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `Leave request ${actionType.value}d successfully`,
+      life: 3000
+    })
+
+    showActionDialog.value = false
+    loadLeaveRequests()
+  } catch (error) {
+    console.error(`Error ${actionType.value}ing leave request:`, error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: `Failed to ${actionType.value} leave request`,
+      life: 3000
+    })
+  } finally {
+    isActionLoading.value = false
+  }
+}
+
+const onLeaveRequestSave = () => {
+  showRequestDialog.value = false
+  editingRequest.value = null
+  loadLeaveRequests()
+}
+
+const exportLeaveRequests = () => {
+  // TODO: Implement export functionality
+  toast.add({
+    severity: 'info',
+    summary: 'Export',
+    detail: 'Export functionality coming soon',
+    life: 3000
+  })
+}
+
+// Utility functions
+const formatStatus = (status: string) => {
+  return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const getStatusSeverity = (status: string) => {
+  const severities = {
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+    cancelled: 'secondary'
+  }
+  return severities[status as keyof typeof severities] || 'secondary'
+}
+
+const getStatusColor = (status: string) => {
+  const colors = {
+    pending: 'bg-yellow-100 text-yellow-600',
+    approved: 'bg-green-100 text-green-600',
+    rejected: 'bg-red-100 text-red-600',
+    cancelled: 'bg-gray-100 text-gray-600'
+  }
+  return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-600'
+}
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString()
+}
+
+const getDayOfWeek = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString([], { weekday: 'long' })
+}
+
+const getTimeAgo = (dateString: string) => {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+  
+  if (diffInHours < 1) {
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
+    return `${diffInMinutes}m ago`
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`
+  } else {
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays}d ago`
+  }
+}
+
+// Lifecycle
 onMounted(() => {
-  // Initialize data
+  loadLeaveRequests()
+  loadEmployees()
+  loadLeaveTypes()
 })
 </script>
 
 <style scoped>
-.stat-card {
-  height: 100%;
+.leave-page {
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.space-y-3 > * + * {
-  margin-top: 0.75rem;
-}
-
-.space-y-4 > * + * {
-  margin-top: 1rem;
-}
-
-.text-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.page-header {
+  border-bottom: 1px solid var(--surface-border);
+  padding-bottom: 1.5rem;
 }
 </style>
