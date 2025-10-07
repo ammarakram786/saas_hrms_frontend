@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import jwtDecode from 'jwt-decode'
 import type { User, AuthTokens, LoginCredentials } from '~/types/auth'
+import { authService } from '~/services/authService'
 
 interface AuthState {
   user: User | null
   tokens: AuthTokens | null
   permissions: string[]
   roles: any[]
-  tenant: any | null
   isLoading: boolean
 }
 
@@ -17,7 +17,6 @@ export const useAuthStore = defineStore('auth', {
     tokens: null,
     permissions: [],
     roles: [],
-    tenant: null,
     isLoading: false
   }),
 
@@ -57,12 +56,7 @@ export const useAuthStore = defineStore('auth', {
       this.isLoading = true
 
       try {
-        const { $api } = useNuxtApp()
-
-        const response = await $api.call('/api/v1/auth/login/', {
-          method: 'POST',
-          body: credentials
-        })
+        const response = await authService.login(credentials)
 
         this.tokens = {
           access_token: response.access_token,
@@ -82,7 +76,7 @@ export const useAuthStore = defineStore('auth', {
         // Store in localStorage
         this.persistAuth()
 
-        // Get user permissions and tenant info
+        // Get user permissions
         await this.fetchUserPermissions()
 
         return response
@@ -99,13 +93,8 @@ export const useAuthStore = defineStore('auth', {
       this.isLoading = true
 
       try {
-        const { $api } = useNuxtApp()
         const toast = useToast()
-
-        const response = await $api('/api/v1/auth/register/', {
-          method: 'POST',
-          body: userData
-        })
+        const response = await authService.register(userData)
 
         // Auto-login after registration
         this.tokens = {
@@ -140,20 +129,13 @@ export const useAuthStore = defineStore('auth', {
 
     async refreshToken() {
       if (!this.tokens?.refresh_token) {
-        const errorHandler = useErrorHandler()
-        errorHandler.handleUnauthorized()
+        // No refresh token available, logout user
+        this.logout()
         return
       }
 
       try {
-        const { $api } = useNuxtApp()
-
-        const response = await $api('/api/v1/auth/refresh/', {
-          method: 'POST',
-          body: {
-            refresh_token: this.tokens.refresh_token
-          }
-        })
+        const response = await authService.refreshToken(this.tokens.refresh_token)
 
         this.tokens = {
           ...this.tokens,
@@ -166,8 +148,7 @@ export const useAuthStore = defineStore('auth', {
         return response
       } catch (error) {
         // If refresh fails, logout user
-        const errorHandler = useErrorHandler()
-        errorHandler.handleUnauthorized()
+        this.logout()
         throw error
       }
     },
@@ -176,44 +157,23 @@ export const useAuthStore = defineStore('auth', {
       if (!this.isAuthenticated) return
 
       try {
-        const { $api } = useNuxtApp()
-        
-        const response = await $api('/api/v1/auth/permissions/me/')
+        const response = await authService.getUserPermissions()
         
         this.permissions = response.permissions || []
         this.roles = response.roles || []
         
-        // Fetch tenant info if user is not superuser
-        if (!response.is_superuser) {
-          await this.fetchTenant()
-        }
+        // Permissions and roles are now set
       } catch (error) {
         console.error('Failed to fetch user permissions:', error)
       }
     },
 
-    async fetchTenant() {
-      if (!this.isAuthenticated || this.isSuperUser) return
-
-      try {
-        const { $api } = useNuxtApp()
-        const response = await $api('/api/v1/tenants/current/')
-        this.tenant = response
-      } catch (error) {
-        console.error('Failed to fetch tenant info:', error)
-      }
-    },
 
     async updateProfile(profileData: Partial<User>) {
       if (!this.user) return
 
       try {
-        const { $api } = useNuxtApp()
-        
-        const response = await $api('/api/v1/auth/profile/update/', {
-          method: 'PATCH',
-          body: profileData
-        })
+        const response = await authService.updateProfile(profileData)
         
         this.user = { ...this.user, ...response }
         this.persistAuth()
@@ -229,41 +189,32 @@ export const useAuthStore = defineStore('auth', {
       this.tokens = null
       this.permissions = []
       this.roles = []
-      this.tenant = null
       
-      // Clear localStorage
-      if (process.client) {
-        localStorage.removeItem('auth_tokens')
-        localStorage.removeItem('auth_user')
-      }
+      // Use service to clear localStorage
+      authService.logout()
       
       // Redirect to login
       navigateTo('/login')
     },
 
     persistAuth() {
-      if (process.client) {
-        if (this.tokens) {
-          localStorage.setItem('auth_tokens', JSON.stringify(this.tokens))
-        }
-        if (this.user) {
-          localStorage.setItem('auth_user', JSON.stringify(this.user))
-        }
+      if (this.tokens && this.user) {
+        authService.storeAuth(this.tokens, this.user)
       }
     },
 
     initializeAuth() {
-      if (process.client) {
+      if (import.meta.client) {
         try {
-          const tokens = localStorage.getItem('auth_tokens')
-          const user = localStorage.getItem('auth_user')
+          const tokens = authService.getStoredTokens()
+          const user = authService.getStoredUser()
           
           if (tokens) {
-            this.tokens = JSON.parse(tokens)
+            this.tokens = tokens
           }
           
           if (user) {
-            this.user = JSON.parse(user)
+            this.user = user
           }
           
           // Fetch fresh permissions on app load

@@ -1,37 +1,41 @@
 {
-  "name": "hrms-frontend",
+  "name": "nuxt-app",
   "private": true,
-  "build": {
-    "analyze": true
-  },
+  "type": "module",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
-  },
-  "devDependencies": {
-    "@nuxt/devtools": "latest",
-    "@primevue/nuxt-module": "^4.4.0",
-    "@types/node": "^24.6.2",
-    "nuxt": "^3.8.0",
-    "vue": "^3.3.8",
-    "vue-router": "^4.2.5"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@nuxtjs/tailwindcss": "^6.8.4",
-    "@pinia/nuxt": "^0.5.1",
-    "@primeuix/themes": "^1.2.5",
-    "@primevue/themes": "^4.0.0",
-    "@vueuse/core": "^10.5.0",
-    "@vueuse/nuxt": "^10.5.0",
+    "@nuxt/eslint": "^0.6.2",
+    "@pinia/nuxt": "^0.11.2",
+    "@primeuix/themes": "^1.0.0",
+    "@tailwindcss/vite": "^4.0.9",
     "axios": "^1.6.0",
-    "chart.js": "^4.5.0",
     "jwt-decode": "^3.1.2",
-    "pinia": "^2.1.7",
-    "primeicons": "^6.0.1",
-    "primevue": "^3.45.0",
-    "tailwindcss": "^3.3.5"
+    "nuxt": "^3.19.2",
+    "pinia": "^3.0.3",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.1",
+    "tailwindcss": "^4.0.9",
+    "tailwindcss-primeui": "^0.3.4",
+    "vue": "^3.5.22",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@nuxt/eslint-config": "^0.6.2",
+    "@primevue/nuxt-module": "^4.3.1",
+    "@vueuse/core": "^11.3.0",
+    "@vueuse/nuxt": "^11.3.0",
+    "eslint": "^9.21.0",
+    "sass-embedded": "^1.85.1",
+    "typescript": "^5.8.2",
+    "vue-tsc": "^2.1.6"
   }
 }

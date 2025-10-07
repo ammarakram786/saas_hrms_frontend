@@ -1,5 +1,25 @@
 // Re-export from hrms types
-export type { User, AuthTokens, LoginCredentials } from './hrms'
+export type { User } from './user'
+
+export interface Register {
+  email: string
+  first_name: string
+  last_name: string
+  password: string
+  password_confirm: string
+}
+
+export interface LoginCredentials {
+  email: string
+  password: string
+}
+
+export interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  token_type: string
+  expires_in: number
+  }
 
 export interface UserExtended {
   id: number
@@ -9,13 +29,6 @@ export interface UserExtended {
   is_active: boolean
   is_staff: boolean
   is_superuser: boolean
-  tenant_id?: number
-  profile?: {
-    phone?: string
-    address?: string
-    two_factor_enabled?: boolean
-    [key: string]: any
-  }
   created_at: string
   updated_at: string
 }
@@ -50,24 +63,4 @@ export interface Role {
   is_system: boolean
   is_active: boolean
   tenant_id?: number
-}
-
-export interface Tenant {
-  id: number
-  name: string
-  slug: string
-  domain?: string
-  status: 'active' | 'suspended' | 'pending'
-  is_active: boolean
-  max_users: number
-  max_employees: number
-  subscription_plan?: {
-    id: number
-    name: string
-    price_monthly: number
-    price_yearly: number
-  }
-  subscription_status?: string
-  created_at: string
-  updated_at: string
 }
