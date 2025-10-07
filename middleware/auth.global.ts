@@ -1,22 +1,28 @@
 export default defineNuxtRouteMiddleware((to, from) => {
-  // Only run on client side for immediate redirects
-  if (import.meta.client) {
-    // Direct localStorage check for immediate response
-    const tokens = localStorage.getItem('auth_tokens')
-    const isAuthenticated = !!tokens
-    
-    // Define routes
-    const authRoutes = ['/auth/login', '/auth/access', '/auth/register']
-    const isAuthRoute = authRoutes.includes(to.path)
-    const isProtectedRoute = !isAuthRoute
-    
-    // Instant redirect logic
-    if (isProtectedRoute && !isAuthenticated) {
-      return navigateTo('/auth/login')
-    }
-    
-    if (isAuthRoute && isAuthenticated) {
-      return navigateTo('/')
-    }
+  
+  
+  const authStore = useAuthStore()
+  
+  // Define authentication routes
+  const authRoutes = ['/auth/login']
+  const isAuthRoute = authRoutes.includes(to.path)
+  const isProtectedRoute = !isAuthRoute
+  
+  // Check authentication status
+  const isAuthenticated = authStore.isAuthenticated
+  
+  
+  // Redirect to login if trying to access protected route without authentication
+  if (isProtectedRoute && !isAuthenticated) {
+    console.log('Not authenticated, redirecting to login')
+    return navigateTo('/auth/login')
   }
+  
+  // Redirect to home if trying to access auth routes while authenticated
+  if (isAuthRoute && isAuthenticated) {
+    console.log('Authenticated, redirecting to home')
+    return navigateTo('/')
+  }
+  
+  console.log('Auth middleware done')
 })

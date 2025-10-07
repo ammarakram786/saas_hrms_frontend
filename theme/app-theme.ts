@@ -5,17 +5,30 @@ import type { Theme } from '@primeuix/themes/types'
 const AuraCustomPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '{blue.50}',
-      100: '{blue.100}',
-      200: '{blue.200}',
-      300: '{blue.300}',
-      400: '{blue.400}',
-      500: '{blue.500}',
-      600: '{blue.600}',
-      700: '{blue.700}',
-      800: '{blue.800}',
-      900: '{blue.900}',
-      950: '{blue.950}',
+      50: '{violet.50}',
+      100: '{violet.100}',
+      200: '{violet.200}',
+      300: '{violet.300}',
+      400: '{violet.400}',
+      500: '{violet.500}',
+      600: '{violet.600}',
+      700: '{violet.700}',
+      800: '{violet.800}',
+      900: '{violet.900}',
+      950: '{violet.950}',
+    },
+    secondary: {
+      50: '{gray.50}',
+      100: '{gray.100}',
+      200: '{gray.200}',
+      300: '{gray.300}',
+      400: '{gray.400}',
+      500: '{gray.500}',
+      600: '{gray.600}',
+      700: '{gray.700}',
+      800: '{gray.800}',
+      900: '{gray.900}',
+      950: '{gray.950}',
     },
     colorScheme: {
       light: {
@@ -25,6 +38,12 @@ const AuraCustomPreset = definePreset(Aura, {
             contrastColor: '#ffffff',
             hoverColor: '{primary.600}',
             activeColor: '{primary.700}',
+          },
+          secondary: {
+            color: '{secondary.500}',
+            contrastColor: '#ffffff',
+            hoverColor: '{secondary.600}',
+            activeColor: '{secondary.700}',
           },
           highlight: {
             background: '{primary.50}',
@@ -40,6 +59,12 @@ const AuraCustomPreset = definePreset(Aura, {
           contrastColor: '{surface.900}',
           hoverColor: '{primary.300}',
           activeColor: '{primary.200}',
+        },
+        secondary: {
+          color: '{secondary.400}',
+          contrastColor: '{surface.900}',
+          hoverColor: '{secondary.300}',
+          activeColor: '{secondary.200}',
         },
         highlight: {
           background: 'color-mix(in srgb, {primary.400}, transparent 84%)',

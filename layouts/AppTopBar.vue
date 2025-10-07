@@ -5,6 +5,8 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout()
 const outsideClickListener = ref(null)
 const topbarMenuActive = ref(false)
 
+   const { logout, userFullName, userInitials, user } = useAuth()
+
 onMounted(() => {
   bindOutsideClickListener()
 })
@@ -12,7 +14,7 @@ onBeforeUnmount(() => {
   unbindOutsideClickListener()
 })
 
-const onTopBarMenuButton = () => topbarMenuActive.value = !topbarMenuActive.value
+
 
 const onProfileClick = () => topbarMenuActive.value = false
 
@@ -81,25 +83,9 @@ const isOutsideClicked = (event) => {
       <button
         as="router-link"
         class="layout-topbar-button"
-        @click="onTopBarMenuButton()"
-      >
-        <i class="pi pi-calendar" />
-        <span>Calendar</span>
-      </button>
-      <button
-        as="router-link"
-        class="layout-topbar-button"
-        @click="onProfileClick"
       >
         <i class="pi pi-user" />
         <span>Profile</span>
-      </button>
-      <button
-        as="router-link"
-        class="layout-topbar-button"
-      >
-        <i class="pi pi-cog" />
-        <span>Settings</span>
       </button>
     </div>
   </div>

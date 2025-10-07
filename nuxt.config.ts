@@ -8,7 +8,7 @@ export default defineNuxtConfig({
    runtimeConfig: {
     public: {
         appName: 'HRMS',
-        apiBase: 'http://localhost:8000'
+        apiBase: process.env.API_URL
     }
 },
   modules: [

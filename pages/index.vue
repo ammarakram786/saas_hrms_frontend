@@ -2,19 +2,8 @@
 // Page metadata for additional protection
 definePageMeta({
   middleware: 'auth',
-  layout: false
+  layout: 'default'
 })
-
-// Auth is handled by global middleware, just use composables for data
-const { user, userFullName, isSuperUser, permissions, logout } = useAuth()
-
-const onThrow = () => {
-  throw createError({ statusCode: 500, statusMessage: 'This is a test error', fatal: true })
-}
-
-const handleLogout = () => {
-  logout()
-}
 </script>
 
 <template>
@@ -22,7 +11,7 @@ const handleLogout = () => {
     </div>
       <h2>Welcome to HRMS Dashboard</h2>
       <div class="flex items-center gap-4">
-        <span class="text-lg">Hello, {{ userFullName || 'User' }}!</span>
+        <!-- <span class="text-lg">Hello, {{ userFullName || 'User' }}!</span> -->
      
         
     </div>

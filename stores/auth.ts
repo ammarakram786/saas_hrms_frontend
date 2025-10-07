@@ -1,13 +1,10 @@
 import { defineStore } from 'pinia'
-import jwtDecode from 'jwt-decode'
 import type { User, AuthTokens, LoginCredentials } from '~/types/auth'
 import { authService } from '~/services/authService'
 
 interface AuthState {
   user: User | null
   tokens: AuthTokens | null
-  permissions: string[]
-  roles: any[]
   isLoading: boolean
 }
 
@@ -15,27 +12,13 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
     tokens: null,
-    permissions: [],
-    roles: [],
-    isLoading: false
+    isLoading: false,
   }),
 
   getters: {
-    isAuthenticated: (state) => !!state.tokens?.access_token,
-    isSuperUser: (state) => state.user?.is_superuser || false,
-    
-    hasPermission: (state) => (permission: string) => {
-      if (state.user?.is_superuser) return true
-      return state.permissions.includes(permission)
-    },
-    
-    hasPermissions: (state) => (permissions: string[]) => {
-      if (state.user?.is_superuser) return true
-      return permissions.every(permission => state.permissions.includes(permission))
-    },
-    
-    hasRole: (state) => (roleName: string) => {
-      return state.roles.some(role => role.name === roleName)
+    isAuthenticated: () => {
+      const token = useCookie('auth_token')
+      return !!token.value
     },
     
     userInitials: (state) => {
@@ -67,17 +50,12 @@ export const useAuthStore = defineStore('auth', {
 
         this.user = response.user
 
-        // Decode token to get additional info
-        if (this.tokens.access_token) {
-          const decoded: any = jwtDecode(this.tokens.access_token)
-          this.permissions = decoded.permissions || []
-        }
+        // Store auth token in cookie for SSR
+        useCookie('auth_token').value = response.access_token
+        useCookie('refresh_token').value = response.refresh_token
 
-        // Store in localStorage
-        this.persistAuth()
-
-        // Get user permissions
-        await this.fetchUserPermissions()
+        // Small delay to ensure cookies are properly set
+        await new Promise(resolve => setTimeout(resolve, 100))
 
         return response
       } catch (error: any) {
@@ -89,142 +67,66 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async register(userData: any) {
+    async refresh() {
+      const refreshToken = this.tokens?.refresh_token || useCookie('refresh_token').value
+      
+      if (!refreshToken) {
+        throw new Error('No refresh token available')
+      }
+
       this.isLoading = true
 
       try {
-        const toast = useToast()
-        const response = await authService.register(userData)
+        const response = await authService.refreshToken(refreshToken)
 
-        // Auto-login after registration
         this.tokens = {
           access_token: response.access_token,
-          refresh_token: response.refresh_token,
-          token_type: response.token_type,
+          refresh_token: this.tokens?.refresh_token || refreshToken,
+          token_type: this.tokens?.token_type || 'Bearer',
           expires_in: response.expires_in
         }
 
-        this.user = response.user
-        this.persistAuth()
-
-        // Get user permissions
-        await this.fetchUserPermissions()
-
-        // Show success message
-        toast.add({
-          severity: 'success',
-          summary: 'Registration Successful',
-          detail: `Welcome to HRMS, ${this.userFullName}!`,
-          life: 4000
-        })
+        // Update stored token in cookie
+        useCookie('auth_token').value = response.access_token
 
         return response
       } catch (error: any) {
-        // Error is already handled by the API client error handler
+        // If refresh fails, logout user
+        this.logout()
         throw error
       } finally {
         this.isLoading = false
       }
     },
 
-    async refreshToken() {
-      if (!this.tokens?.refresh_token) {
-        // No refresh token available, logout user
-        this.logout()
-        return
-      }
-
-      try {
-        const response = await authService.refreshToken(this.tokens.refresh_token)
-
-        this.tokens = {
-          ...this.tokens,
-          access_token: response.access_token,
-          expires_in: response.expires_in
-        }
-
-        this.persistAuth()
-
-        return response
-      } catch (error) {
-        // If refresh fails, logout user
-        this.logout()
-        throw error
-      }
-    },
-
-    async fetchUserPermissions() {
-      if (!this.isAuthenticated) return
-
-      try {
-        const response = await authService.getUserPermissions()
-        
-        this.permissions = response.permissions || []
-        this.roles = response.roles || []
-        
-        // Permissions and roles are now set
-      } catch (error) {
-        console.error('Failed to fetch user permissions:', error)
-      }
-    },
-
-
-    async updateProfile(profileData: Partial<User>) {
-      if (!this.user) return
-
-      try {
-        const response = await authService.updateProfile(profileData)
-        
-        this.user = { ...this.user, ...response }
-        this.persistAuth()
-        
-        return response
-      } catch (error: any) {
-        throw new Error(error.message || 'Profile update failed')
-      }
-    },
-
     logout() {
       this.user = null
       this.tokens = null
-      this.permissions = []
-      this.roles = []
       
-      // Use service to clear localStorage
-      authService.logout()
+      // Clear cookies
+      useCookie('auth_token').value = null
+      useCookie('refresh_token').value = null
       
       // Redirect to login
       navigateTo('/login')
     },
 
-    persistAuth() {
-      if (this.tokens && this.user) {
-        authService.storeAuth(this.tokens, this.user)
-      }
-    },
-
     initializeAuth() {
-      if (import.meta.client) {
-        try {
-          const tokens = authService.getStoredTokens()
-          const user = authService.getStoredUser()
-          
-          if (tokens) {
-            this.tokens = tokens
+      try {
+        const authToken = useCookie('auth_token').value
+        const refreshToken = useCookie('refresh_token').value
+        
+        if (authToken && refreshToken) {
+          this.tokens = {
+            access_token: authToken,
+            refresh_token: refreshToken,
+            token_type: 'Bearer',
+            expires_in: 3600 // Default, will be updated on next API call
           }
-          
-          if (user) {
-            this.user = user
-          }
-          
-          // Fetch fresh permissions on app load
-          if (this.isAuthenticated) {
-            this.fetchUserPermissions()
-          }
-        } catch (error) {
-          console.error('Error initializing auth from localStorage:', error)
-          this.logout()
         }
+      } catch (error) {
+        console.error('Error initializing auth from cookies:', error)
+        this.logout()
       }
     }
   }

@@ -1,7 +1,5 @@
 <script setup>
-definePageMeta({
-  layout: false,
-})
+// Component for 404 page
 </script>
 
 <template>

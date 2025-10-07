@@ -1,7 +1,5 @@
 <script setup>
-definePageMeta({
-  layout: false,
-})
+// Component for fatal error page
 </script>
 
 <template>
