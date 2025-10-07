@@ -19,7 +19,7 @@ export interface AuthTokens {
   refresh_token: string
   token_type: string
   expires_in: number
-  }
+}
 
 export interface UserExtended {
   id: number

@@ -3,12 +3,14 @@ definePageMeta({
   layout: false,
 })
 
-const { login, userFullName, isLoading } = useAuth()
+const authStore = useAuthStore()
+
 const toast = useToast()
 
 const email = ref('')
 const password = ref('')
 const checked = ref(false)
+const isLoading = ref(false)
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -16,33 +18,38 @@ const handleLogin = async () => {
       severity: 'warn',
       summary: 'Validation Error',
       detail: 'Please fill in all fields',
-      life: 3000
+      life: 3000,
     })
     return
   }
-  
+
   try {
-    await login({
+    isLoading.value = true
+    await authStore.login({
       email: email.value,
-      password: password.value
+      password: password.value,
     })
-    
+
     toast.add({
       severity: 'success',
       summary: 'Login Successful',
-      detail: `Welcome back, ${userFullName.value}!`,
-      life: 4000
+      detail: `Welcome back, ${authStore.userFullName}!`,
+      life: 4000,
     })
-    
+
     // Redirect to home page (delay is handled in the store)
     await navigateTo('/')
-  } catch (error) {
+  }
+  catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Login Failed',
       detail: error.message || 'Invalid credentials',
-      life: 4000
+      life: 4000,
     })
+  }
+  finally {
+    isLoading.value = false
   }
 }
 </script>

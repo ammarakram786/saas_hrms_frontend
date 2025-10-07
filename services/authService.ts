@@ -10,7 +10,7 @@ export interface LoginResponse {
 
 export interface RefreshResponse {
   access_token: string
-  expires_in: number  
+  expires_in: number
 }
 
 export class AuthService {
@@ -22,7 +22,7 @@ export class AuthService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     return await this.getApi().call('/api/v1/auth/login/', {
       method: 'POST',
-      data: credentials
+      data: credentials,
     })
   }
 
@@ -30,8 +30,8 @@ export class AuthService {
     return await this.getApi().call('/api/v1/auth/refresh/', {
       method: 'POST',
       data: {
-        refresh_token: refreshToken
-      }
+        refresh_token: refreshToken,
+      },
     })
   }
 
