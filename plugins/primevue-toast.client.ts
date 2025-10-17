@@ -1,7 +1,7 @@
-import { useToast as usePrimeToast } from 'primevue/usetoast'
+import { useToast } from 'primevue/usetoast'
 
 export default defineNuxtPlugin(() => {
-  const toast = usePrimeToast()
+  const toast = useToast()
 
   return {
     provide: {

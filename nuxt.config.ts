@@ -23,8 +23,8 @@ export default defineNuxtConfig({
     },
   },
   devServer: {
-    port: 3000,
-    host: 'localhost',
+    port: 5050,
+    host: '0.0.0.0',
   }, compatibilityDate: '2025-07-15',
   vite: {
     plugins: [

@@ -5,7 +5,7 @@ const { onMenuToggle, toggleDarkMode, isDarkTheme } = useLayout()
 const outsideClickListener = ref(null)
 const topbarMenuActive = ref(false)
 
-const { logout, userFullName, userInitials, user } = useAuth()
+// const { logout, userFullName, userInitials, user } = useAuth()
 
 onMounted(() => {
   bindOutsideClickListener()
@@ -14,7 +14,7 @@ onBeforeUnmount(() => {
   unbindOutsideClickListener()
 })
 
-const onProfileClick = () => topbarMenuActive.value = false
+// const onProfileClick = () => topbarMenuActive.value = false
 
 const topbarMenuClasses = computed(() => {
   return {

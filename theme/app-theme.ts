@@ -62,7 +62,7 @@ const AuraCustomPreset = definePreset(Aura, {
         },
         secondary: {
           color: '{secondary.400}',
-          contrastColor: '{surface.900}',
+          contrastColor: '{surface.100}',
           hoverColor: '{secondary.300}',
           activeColor: '{secondary.200}',
         },
